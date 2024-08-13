@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "wheat-seed-classification"
+version = "0.1.0"
+description = "Analysing single seed wheat using hyperspectral imaging and RGB imaging"
+authors = ["Sar2580P <sporwal1818@gmail.com>"]
+license = "MIT License"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+pytorch-lightning = "^2.4.0"
+numpy = "^1.26.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

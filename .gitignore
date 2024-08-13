@@ -1,5 +1,6 @@
 Data
 env
+.env
 lightning_logs
 __pycache__
 models/ensemble/Classifier_Prediction_Data
