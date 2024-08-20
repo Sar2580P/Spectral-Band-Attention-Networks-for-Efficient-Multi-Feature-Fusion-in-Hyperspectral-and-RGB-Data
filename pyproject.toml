@@ -10,6 +10,12 @@ readme = "README.md"
 python = "^3.10"
 pytorch-lightning = "^2.4.0"
 numpy = "^1.26.0"
+opencv-python = "^4.10.0.84"
+spectral = "^0.23.1"
+pandas = "^2.2.2"
+pydantic = "^2.8.2"
+scikit-learn = "^1.5.1"
+matplotlib = "^3.9.2"
 
 
 [build-system]
