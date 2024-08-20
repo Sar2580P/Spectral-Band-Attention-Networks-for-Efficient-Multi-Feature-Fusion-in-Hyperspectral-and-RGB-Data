@@ -7,3 +7,5 @@ models/ensemble/Classifier_Prediction_Data
 **/ckpts/
 **/evaluations/
 
+models
+pics
