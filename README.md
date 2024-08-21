@@ -1,8 +1,4 @@
-# RiceClassification
+# Wheat-Seed-Classification
 
 
-Running the scheduler script :
-```
-chmod +x models/hsi/schedule_run.sh
-bash models/hsi/schedule_run.sh
-```
+[Task Planning Document](https://docs.google.com/document/d/1x1z6RC9uSDCcBOmpTljX6_TIrBnDmJdelYQfNcxdzlc/edit?usp=sharing).

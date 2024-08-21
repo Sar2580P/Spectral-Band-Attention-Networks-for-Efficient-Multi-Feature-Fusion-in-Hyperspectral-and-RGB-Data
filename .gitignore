@@ -1,11 +1,12 @@
 Data
 env
 .env
+references
 lightning_logs
 __pycache__
 models/ensemble/Classifier_Prediction_Data
 **/ckpts/
 **/evaluations/
-
+Data/hsi_pca
 models
 pics
