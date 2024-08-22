@@ -1,15 +1,17 @@
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from pytorch_lightning.callbacks import ModelCheckpoint, RichProgressBar, RichModelSummary
-from torchvision import transforms
-
 from  pytorch_lightning.callbacks.progress.rich_progress import RichProgressBarTheme
+from processing.utils import read_yaml
 
+config = read_yaml('models/rgb/config.yaml')
+
+es_config = config['EarlyStopping']
 early_stop_callback = EarlyStopping(
-   monitor='val_loss',
-   min_delta=0.0001,
-   patience=10,
-   verbose=True,
-   mode='min'
+   monitor=es_config['monitor'],
+   min_delta=es_config['min_delta'],
+   patience=es_config['patience'],
+   verbose=es_config['verbose'],
+   mode=es_config['mode']
 )
 
 theme = RichProgressBarTheme(metrics='green', time='yellow', progress_bar_finished='#8c53e0' ,progress_bar='#c99e38')
@@ -17,30 +19,10 @@ rich_progress_bar = RichProgressBar(theme=theme)
 
 rich_model_summary = RichModelSummary(max_depth=5)
 
+ckpt_config = config['ModelCheckpoint']
 checkpoint_callback = ModelCheckpoint(
-    monitor='val_loss',
-    save_top_k=2,
-    verbose=True,
-    mode='min',
+    monitor=ckpt_config['monitor'],
+    save_top_k=ckpt_config['save_top_k'],
+    verbose=ckpt_config['verbose'],
+    mode=ckpt_config['mode'],
  )
-rgb_transforms = transforms.Compose([
-      transforms.RandomHorizontalFlip(p=0.5),
-      transforms.RandomVerticalFlip(p=0.5),
-      transforms.RandomAffine(degrees=5, translate=(0.1, 0.1), scale=(0.8, 1.25)),
-      transforms.ToTensor(),
-   ])
-
-val_rgb_transforms = transforms.Compose([
-      transforms.ToTensor(),
-   ])
-
-hsi_img_transforms = transforms.Compose([
-   transforms.ToTensor(),
-   transforms.RandomHorizontalFlip(p=0.7),
-   transforms.RandomVerticalFlip(p=0.7),
-   transforms.RandomAffine(degrees=5, translate=(0.1, 0.2), scale=(0.8, 1.25)),
-
-])
-val_hsi_transforms = transforms.Compose([
-   transforms.ToTensor(),
-])

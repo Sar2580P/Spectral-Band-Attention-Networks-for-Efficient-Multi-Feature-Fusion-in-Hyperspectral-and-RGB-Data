@@ -3,7 +3,7 @@ import sys
 sys.path.append('Preprocessing')
 sys.path.append('models')
 from train_eval import *
-from model import *
+from models.model_architectures import *
 from modules import *
 from dynamic_weighting import *
 from utils import *

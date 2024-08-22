@@ -1,6 +1,8 @@
 import torchvision
 import torch.nn as nn
-from modules import *
+from models.modules import (BandAttentionBlock, Composite, FC, 
+                            ResidualBlock, SqueezeBlock, XceptionBlock, 
+                            SeparableConvBlock, DenseBlock, TransitionLayer)
 import torch
 from torchview import draw_graph
 from pytorch_lightning import LightningModule
@@ -49,7 +51,7 @@ class RGB_Resnet():
   # https://pytorch.org/vision/main/models/generated/torchvision.models.resnet101.html
   def __init__(self, config ):
     self.config = config
-
+    self.model_name = config['model_name']+'-'+config['resnet_variant']
     self.model = self.get_model()
     self.layer_lr = [{'params' : self.base_model.parameters()},{'params': self.head.parameters(), 'lr': self.config['lr'] * 20}]
     # plot_model(self.config , self.model)
@@ -83,7 +85,7 @@ class GoogleNet():
   # https://pytorch.org/vision/stable/models/generated/torchvision.models.efficientnet_v2_l.html#torchvision.models.efficientnet_v2_l
   def __init__(self, config):
     self.config = config
-
+    self.model_name = config['model_name']
 
     self.model = self.get_model()
     self.layer_lr = [{'params' : self.base_model.parameters()},{'params': self.head.parameters(), 'lr': self.config['lr'] * 100}]
@@ -114,7 +116,7 @@ class DenseNetRGB():
   # https://pytorch.org/vision/stable/models/generated/torchvision.models.efficientnet_v2_l.html#torchvision.models.efficientnet_v2_l
   def __init__(self, config):
     self.config = config
-
+    self.model_name = config['model_name']+'-'+config['densenet_variant']
 
     self.model = self.get_model()
     self.layer_lr = [{'params' : self.base_model.parameters()},{'params': self.head.parameters(), 'lr': self.config['lr'] * 5}]
@@ -125,7 +127,10 @@ class DenseNetRGB():
                 FC(0.2 , 1024 ,144),
 
     )
-    self.dnet = torchvision.models.densenet121( weights='DEFAULT', progress = True)    # 'DEFAULT'  : 'IMAGENET1K_V1'
+    if self.config['variant'] == 121:
+      self.dnet = torchvision.models.densenet121( weights='DEFAULT', progress = True)    # 'DEFAULT'  : 'IMAGENET1K_V1'
+    else:
+      self.dnet = torchvision.models.densenet169( weights='DEFAULT', progress = True)
 
     self.base_model = nn.Sequential(
                                     *list(self.dnet.children())[:-1],
@@ -139,7 +144,6 @@ class DenseNetRGB():
 
   def forward(self, x):
     x =  self.model(x)
-    # print(x.shape)
     return x
 #___________________________________________________________________________________________________________________
 
@@ -193,29 +197,29 @@ class HSIModel(nn.Module):
 #___________________________________________________________________________________________________________________
 
 class DenseNet(nn.Module):
-    def __init__(self,densenet_variant,in_channels,num_classes, compression_factor, k , config):
+    def __init__(self,densenet_variant, config):
 
         super(DenseNet,self).__init__()
 
         self.densenet_variant = densenet_variant
-        self.in_channels = in_channels
-        self.num_classes = num_classes
-        self.compression_factor = compression_factor
-        self.k = k
+        self.in_channels = config['C']
+        self.num_classes = config['num_classes']
+        self.compression_factor = config['compression_factor']
+        self.k = config['k']
         self.model = self.get_model()
         self.config = config
         self.layer_lr = [{'params' : self.model.parameters() , 'lr' : self.config['lr'] * 1}]
+        self.model_name = config['model_name']+'-'+config['densenet_variant']
         # plot_model(self.config , self.model)
 
-
-
     def get_model(self):
-        seq_1 =  nn.Sequential(
-                      nn.Conv2d(in_channels=self.in_channels ,out_channels=64 ,kernel_size=7 ,stride=2 ,padding=3 ,bias = False) ,
-                      nn.BatchNorm2d(num_features=64) ,
-                      nn.ReLU() ,
-                      nn.MaxPool2d(kernel_size=2, stride=2) ,
-                    )
+        
+        # seq_1 =  nn.Sequential(
+        #               nn.Conv2d(in_channels=self.in_channels ,out_channels=64 ,kernel_size=7 ,stride=2 ,padding=3 ,bias = False) ,
+        #               nn.BatchNorm2d(num_features=64) ,
+        #               nn.ReLU() ,
+        #               nn.MaxPool2d(kernel_size=2, stride=2) ,
+        #             )
         #----------------------------------------------------------------------------------------------------------------------------
         # adding 3 DenseBlocks and 3 Transition Layers
         self.deep_nn = nn.ModuleList()
@@ -244,7 +248,8 @@ class DenseNet(nn.Module):
                           # # fully connected layer
                           nn.Linear(self.dense_block_inchannels, self.num_classes)
                 )
-
+        if self.config['apply_BAM']:
+          self.bam = BandAttentionBlock(self.in_channels)
         return nn.Sequential(
                   # seq_1,
                   seq_2
@@ -254,7 +259,8 @@ class DenseNet(nn.Module):
         """
         deep_nn is the module_list container which has all the dense blocks and transition blocks
         """
-
+        if self.config['apply_BAM']:
+          x = self.bam(x)
         return self.model(x)
 
 

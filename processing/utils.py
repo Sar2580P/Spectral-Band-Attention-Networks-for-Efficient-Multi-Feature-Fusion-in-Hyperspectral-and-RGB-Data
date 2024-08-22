@@ -1,10 +1,52 @@
-import yaml
+import yaml 
+import logging
+from colorama import Fore, Style, init
 
 def read_yaml(CONFIG_PATH):
   with open(CONFIG_PATH, 'r') as f:
       config = yaml.safe_load(f)
   return config
 
+
+# Initialize colorama
+init(autoreset=True)
+
+# Create a custom logger
+logger = logging.getLogger('custom_logger')
+logger.setLevel(logging.DEBUG)  # Set the default logging level
+
+# Create a console handler
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.DEBUG)  # Set the logging level for the handler
+
+# Create a formatter that includes the level name, message, and emoji
+class ColoredFormatter(logging.Formatter):
+    COLORS = {
+        'DEBUG': Fore.BLUE,
+        'INFO': Fore.GREEN,
+        'WARNING': Fore.YELLOW,
+        'ERROR': Fore.RED,
+        'CRITICAL': Fore.MAGENTA,
+    }
+    EMOJIS = {
+        'DEBUG': '🐛',
+        'INFO': 'ℹ️',
+        'WARNING': '⚠️',
+        'ERROR': '❌',
+        'CRITICAL': '🔥',
+    }
+
+    def format(self, record):
+        log_color = self.COLORS.get(record.levelname, Fore.WHITE)
+        emoji = self.EMOJIS.get(record.levelname, '')
+        record.msg = f"{log_color}{emoji} {record.msg}{Style.RESET_ALL}"
+        return super().format(record)
+
+formatter = ColoredFormatter('%(levelname)s: %(message)s')
+console_handler.setFormatter(formatter)
+
+# Add the handler to the logger
+logger.addHandler(console_handler)
 #_______________________________________________________________________________________________________________________
 
 ## Splitting image logic

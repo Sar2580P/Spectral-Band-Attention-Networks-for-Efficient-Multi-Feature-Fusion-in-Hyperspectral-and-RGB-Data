@@ -60,9 +60,9 @@ class BandAttentionBlock(nn.Module):
         self.max_pool, 
         self.conv2d_d ,
         self.conv2d_e ,
-        self.gap ,
+        self.gap 
     )
-  def forward(self, x):
+  def forward(self, x:torch.Tensor):
     vector = self.att_model(x)   # (B,32,1,1)
     vector = vector.squeeze(3)  # (B,32,1)
     vector = vector.permute(0,2,1)  # (B,1,32)

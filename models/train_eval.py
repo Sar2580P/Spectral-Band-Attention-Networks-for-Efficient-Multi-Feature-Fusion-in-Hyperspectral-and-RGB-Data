@@ -1,6 +1,6 @@
 import torch
 import pytorch_lightning as pl
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import Dataset
 import numpy as np
 from PIL import Image
 import torchmetrics
@@ -87,18 +87,19 @@ class Classifier(pl.LightningModule):
 #___________________________________________________________________________________________________________________
 class MyDataset(Dataset):
   # defining values in the constructor
-  def __init__(self , df, hsi_preprocessing:str =None , transforms_ = None ):
+  def __init__(self , df, data_dir:str , hsi_preprocessing:str =None , transforms_ = None , ):
     self.df = df
     self.Y = torch.tensor( self.df.loc[:, 'class_id'].values, dtype=torch.float32)
     self.shape = self.df.shape
     self.transforms_ = transforms_
     self.hsi_preprocessing = hsi_preprocessing
+    self.data_dir = data_dir
 
   # Getting the data samples
   def __getitem__(self, idx):
     y =  self.Y[idx]
     img_tensor = None
-    img_path = self.df.img_path.iloc[idx]
+    img_path = os.path.join(self.data_dir , self.df.img_path.iloc[idx])
     if img_path.lower().split('.')[-1] == 'png':
       img_tensor = Image.open(img_path)
     else :

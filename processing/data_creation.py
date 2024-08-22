@@ -1,12 +1,10 @@
-import os, sys
+import os
 import pandas as pd
 import json
-sys.path.insert(0 , os.getcwd())
-from utils import *
 import random
 random.seed(42)
-from sklearn.model_selection import StratifiedKFold
-
+from sklearn.model_selection import StratifiedKFold, train_test_split
+from tqdm import tqdm
 
 
 #__________________________________________________________________________________________________________________
@@ -45,7 +43,6 @@ def create_folds(final_df, variety_count, num_folds=5):
       df_val_fold.to_csv(os.path.join(BASE_PATH, f'fold_{fold}' ,  'df_val.csv') , index = False)
       print('fold_{x} created'.format(x = fold))
 
-from sklearn.model_selection import train_test_split
 
 def data_4_varietal(mapping_4variety, base_mapping, final_df_path='Data/final_df.csv',
                     save_dir='Data/varietal_4', prefix='4_varietal'):
@@ -90,22 +87,20 @@ def data_4_varietal(mapping_4variety, base_mapping, final_df_path='Data/final_df
     print(f"Data saved to {save_dir} with prefix '{prefix}'")
 
 
-if not os.path.exists('Data/final_df.csv'):
-  hsi_df = pd.read_csv('Data/hsi.csv')
-
-  RGB_BASE_PATH, HSI_BASE_PATH = 'Data/rgb' , 'Data/hsi'
-  final_df = pd.DataFrame(columns=['rgb_path', 'hsi_path' , 'class_id'])
-  for i in range(len(hsi_df)):
-
-    rgb_path = RGB_BASE_PATH +'/'+ hsi_df.iloc[i,0][:-4]+'.png'
-    hsi_path = HSI_BASE_PATH +'/'+ hsi_df.iloc[i,0]
-    class_id = hsi_df.iloc[i,1]
-    final_df.loc[len(final_df)] = [rgb_path , hsi_path , class_id]
-
-  final_df.to_csv('Data/final_df.csv' , index = False)
-
-
 if __name__ == '__main__':
+  
+  if not os.path.exists('Data/final_df.csv'):
+    hsi_df = pd.read_csv('Data/hsi.csv')
+    final_df = pd.DataFrame(columns=['rgb_path', 'hsi_path' , 'class_id'])
+    for i in tqdm(range(len(hsi_df)), desc='Creating final df with all files'):
+
+      rgb_path =  hsi_df.iloc[i,0][:-4]+'.png'
+      hsi_path =  hsi_df.iloc[i,0]
+      class_id = hsi_df.iloc[i,1]
+      final_df.loc[len(final_df)] = [rgb_path , hsi_path , class_id]
+
+    final_df.to_csv('Data/final_df.csv' , index = False)
+  
   li = [12,24,37 , 55 , 75 , 96 , 98]
   for class_count in li:
     create_folds(pd.read_csv('Data/final_df.csv'), class_count)
