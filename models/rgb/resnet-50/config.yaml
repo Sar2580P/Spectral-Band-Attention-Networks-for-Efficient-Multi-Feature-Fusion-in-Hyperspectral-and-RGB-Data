@@ -1,0 +1,13 @@
+BATCH_SIZE: 128
+C: 3
+H: 247
+W: 120
+ckpt_file_name: '{epoch}-{val_loss:.2f}-{val_accuracy:.2f}'
+dir: models/rgb/resnet-50
+flatten_dim: 2048
+fold: 4
+lr: 7.0e-06
+model_name: rgb_resnet-50
+num_classes: 98
+variant: 50
+weight_decay: 9.0e-05
