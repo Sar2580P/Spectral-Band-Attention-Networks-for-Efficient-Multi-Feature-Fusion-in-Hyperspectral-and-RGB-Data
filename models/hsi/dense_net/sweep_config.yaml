@@ -1,0 +1,86 @@
+method : 'bayes'
+name : 'hsi_densenet'
+metric :
+  goal : 'minimize'
+  name : 'val_loss'
+
+parameters :
+  num_classes:
+    value : 96
+  num_workers:
+    value : 8
+  preprocessing:
+    value : msc
+  modality:
+    value : hsi
+  data_type:
+    value : trimmed
+  dir :
+    value: 'results/hsi/sweep/densenet'
+  data_dir :
+    value : 'Data/hsi_trimmed'
+  num_classes :
+    value: 96
+  apply_BAM:
+    value : false
+  fold:
+    value : 4
+
+  model_name :
+    value : 'densenet'
+  H :
+    value : 40
+  W :
+    value : 24
+  C :
+    value : 168
+  lr :
+    value :  0.000009489
+    # min : 0.000001
+    # max : 0.00001
+  weight_decay :
+    value : 0.000001898
+    # min : 1.0e-7
+    # max : 1.0e-5
+  BATCH_SIZE:
+    value : 64
+    # distribution: 'q_log_uniform_values'
+    # max: 128
+    # min: 32
+    # q: 8
+  MAX_EPOCHS :
+    value : 200
+  accumulate_grad_batches:
+    value : 3
+  model_size :
+    value : [12,18,24, 6]
+    # values :
+    #   - [12, 18, 24, 6]
+    #   - [12, 18, 10, 5]
+    #   - [6,12,24,16]
+    #   - [6,12,24,32]
+    #   - [6,12,48,32]
+  compression_factor :
+    # value : 0.3
+    values :
+      - 0.2
+      - 0.25
+      - 0.3
+      - 0.35
+      - 0.4
+      - 0.45
+      - 0.5
+  k :
+    # value : 32
+    values :
+      - 16
+      - 32
+      - 48
+      - 64
+  densenet_variant :
+    value : '[12,18,24, 6]'
+    # values : ["densenet_mini", "densenet"]
+
+  # optimizer :
+  #   values : ["adam", "sgd"]
+

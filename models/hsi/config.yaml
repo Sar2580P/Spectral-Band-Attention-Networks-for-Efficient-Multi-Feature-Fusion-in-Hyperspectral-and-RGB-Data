@@ -1,27 +1,22 @@
-C: 147
-H: 40
-W: 24
-data_dir : data/hsi
-fold: 4
-ckpt_file_name: '{epoch}-{val_loss:.2f}-{val_accuracy:.2f}'
-dir: results/hsi
-modality : hsi
-preprocessing: msc
-data_type : all_channel_raw   # should be one of ['all_channel_raw', 'pca', 'trimmed', 'pca_trimmed']
-apply_BAM : False
-
-lr: 7.44e-06
-weight_decay: 3.0e-08
 BATCH_SIZE: 128
-num_classes: 96
-num_workers : 8
-
+C: 168
+H: 40
+MAX_EPOCHS: 300
+W: 24
+apply_BAM: false
+apply_bam: false
+ckpt_file_name: '{epoch}-{val_loss:.2f}-{val_accuracy:.2f}'
+compression_factor: 0.3
+data_dir: Data/hsi
+data_type: original
+densenet_variant: densenet_mini
+dir: results/hsi
+fold: 4
+k: 32
+lr: 7.44e-06
+modality: hsi
 model_name: densenet
-
-# denseNet specific parameters
-densenet_variant : densenet_mini
-compression_factor : 0.3
-k : 32
-
-# trainer specific parameters
-MAX_EPOCHS : 300
+num_classes: 96
+num_workers: 8
+preprocessing: none
+weight_decay: 3.0e-08

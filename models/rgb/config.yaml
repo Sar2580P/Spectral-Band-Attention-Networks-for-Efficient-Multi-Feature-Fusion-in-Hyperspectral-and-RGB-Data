@@ -1,35 +1,28 @@
-C: 3
-H: 247
-W: 120
-fold: 4
-data_dir : data/rgb
-ckpt_file_name: '{epoch}-{val_loss:.2f}-{val_accuracy:.2f}'
-# dir: models/rgb/densenet
 BATCH_SIZE: 128
+C: 3
+EarlyStopping:
+  min_delta: 0.0005
+  mode: min
+  monitor: val_loss
+  patience: 5
+  verbose: true
+H: 247
+MAX_EPOCHS: 100
+ModelCheckpoint:
+  mode: min
+  monitor: val_loss
+  save_top_k: 1
+  verbose: true
+W: 120
+ckpt_file_name: '{epoch}-{val_loss:.2f}-{val_accuracy:.2f}'
+data_dir: Data/rgb
+densenet_variant: 121
+dir: results/rgb
+fold: 4
 lr: 7.0e-06
+modality: rgb
+model_name: google_net
+num_classes: 96
+num_workers: 8
+resnet_variant: 34
 weight_decay: 9.0e-05
-num_workers : 8
-num_classes: 98
-dir : results/rgb
-modality : rgb
-model_name: densenet
-resnet_variant : 34   # one of 34,50... only applicable when model_name is resnet
-densenet_variant : 121 # one of 121,169,201,264... only applicable when model_name is densenet
-
-
-# Trainer Configs
-MAX_EPOCHS : 100
-
-# callbacks
-EarlyStopping : 
-  monitor : val_loss
-  min_delta : 0.0005
-  patience : 10
-  verbose : True
-  mode : min
-
-ModelCheckpoint :
-  monitor : val_loss
-  mode : min
-  save_top_k : 1
-  verbose : True

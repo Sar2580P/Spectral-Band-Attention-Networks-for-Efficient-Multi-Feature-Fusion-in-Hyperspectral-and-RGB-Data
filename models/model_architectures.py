@@ -1,7 +1,7 @@
 import torchvision
 import torch.nn as nn
-from models.modules import (BandAttentionBlock, Composite, FC, 
-                            ResidualBlock, SqueezeBlock, XceptionBlock, 
+from models.modules import (BandAttentionBlock, Composite, FC,
+                            ResidualBlock, SqueezeBlock, XceptionBlock,
                             SeparableConvBlock, DenseBlock, TransitionLayer)
 import torch
 from torchview import draw_graph
@@ -51,22 +51,23 @@ class RGB_Resnet():
   # https://pytorch.org/vision/main/models/generated/torchvision.models.resnet101.html
   def __init__(self, config ):
     self.config = config
-    self.model_name = config['model_name']+'-'+config['resnet_variant']
+    self.model_name = config['model_name']+'-'+str(config['resnet_variant'])
     self.model = self.get_model()
     self.layer_lr = [{'params' : self.base_model.parameters()},{'params': self.head.parameters(), 'lr': self.config['lr'] * 20}]
     # plot_model(self.config , self.model)
 
 
   def get_model(self):
-    if self.config['variant'] == 50:
+    if self.config['resnet_variant'] == 50:
       self.resnet = torchvision.models.resnet50(weights = 'DEFAULT', progress = True)
-    else:
+      flatten_dim = 2048
+    elif self.config['resnet_variant'] == 34:
       self.resnet = torchvision.models.resnet34(weights = 'DEFAULT', progress = True)
-
+      flatten_dim = 512
     self.base_model = nn.Sequential(*list(self.resnet.children())[:-1])
     self.head = nn.Sequential(
                 nn.Flatten(1) ,
-                FC(0.2 , self.config['flatten_dim'], 256),
+                FC(0.2 , flatten_dim, 256),
                 FC(0.0 ,256, self.config['num_classes']),
                         )
     return nn.Sequential(
@@ -116,30 +117,30 @@ class DenseNetRGB():
   # https://pytorch.org/vision/stable/models/generated/torchvision.models.efficientnet_v2_l.html#torchvision.models.efficientnet_v2_l
   def __init__(self, config):
     self.config = config
-    self.model_name = config['model_name']+'-'+config['densenet_variant']
+    self.model_name = config['model_name']+'-'+str(config['densenet_variant'])
 
     self.model = self.get_model()
     self.layer_lr = [{'params' : self.base_model.parameters()},{'params': self.head.parameters(), 'lr': self.config['lr'] * 5}]
     # plot_model(self.config , self.model)
   def get_model(self):
-    self.head = nn.Sequential(
-                nn.Flatten(1) ,
-                FC(0.2 , 1024 ,144),
-
-    )
-    if self.config['variant'] == 121:
+    if self.config['densenet_variant'] == 121:
       self.dnet = torchvision.models.densenet121( weights='DEFAULT', progress = True)    # 'DEFAULT'  : 'IMAGENET1K_V1'
+      flatten_dim = 1024
     else:
       self.dnet = torchvision.models.densenet169( weights='DEFAULT', progress = True)
-
+      flatten_dim = 1664
     self.base_model = nn.Sequential(
                                     *list(self.dnet.children())[:-1],
                                     nn.AdaptiveAvgPool2d(1),
                                     )
+    self.head = nn.Sequential(
+                nn.Flatten(1) ,
+                FC(0.2 , flatten_dim ,256),
+              )
     return nn.Sequential(
                   self.base_model ,
                   self.head,
-                  FC(0, 144, self.config['num_classes'])
+                  FC(0, 256, self.config['num_classes'])
                         )
 
   def forward(self, x):
@@ -206,14 +207,14 @@ class DenseNet(nn.Module):
         self.num_classes = config['num_classes']
         self.compression_factor = config['compression_factor']
         self.k = config['k']
-        self.model = self.get_model()
         self.config = config
+        self.model = self.get_model()
         self.layer_lr = [{'params' : self.model.parameters() , 'lr' : self.config['lr'] * 1}]
         self.model_name = config['model_name']+'-'+config['densenet_variant']
-        # plot_model(self.config , self.model)
+        # plot_model(config={'BATCH_SIZE':32 , 'C' : 168 , 'H' : 40 , 'W' : 24 , 'model_name' : 'radhe-shyam' , 'dir' : './'} , model=self.model)
 
     def get_model(self):
-        
+
         # seq_1 =  nn.Sequential(
         #               nn.Conv2d(in_channels=self.in_channels ,out_channels=64 ,kernel_size=7 ,stride=2 ,padding=3 ,bias = False) ,
         #               nn.BatchNorm2d(num_features=64) ,
@@ -240,7 +241,7 @@ class DenseNet(nn.Module):
 
         seq_2 = nn.Sequential(
                           *self.deep_nn ,
-                          # nn.BatchNorm2/d(num_features=self.dense_block_inchannels)  ,
+                          # nn.BatchNorm2d(num_features=self.dense_block_inchannels)  ,
                           nn.ReLU() ,
                           # # Average Pool
                           nn.AdaptiveAvgPool2d(1),
@@ -301,15 +302,32 @@ class Varietal4_Classification(nn.Module):
 # mnet = MobileNet(config={'num_classes': 96, 'lr' : 0.001 , 'BATCH_SIZE' : 32 , 'C' : 3 , 'H' : 224 , 'W' : 224 , 'model_name' : 'MobileNet' , 'dir' : './'})
 
 # gnet = GoogleNet(config={'num_classes': 96, 'lr' : 0.001 , 'BATCH_SIZE' : 32 , 'C' : 3 , 'H' : 247 , 'W' : 120 , 'model_name' : 'GoogleNet' , 'dir' : './'})
-# dnet = DenseNetRGB(config={'num_classes': 98, 'lr' : 0.001 , 'BATCH_SIZE' : 32 , 'C' : 3 , 'H' : 247 , 'W' : 120 , 'model_name' : 'DenseNet' , 'dir' : './'})
+# dnet = DenseNetRGB(config={'num_classes': 98, 'lr' : 0.001 , 'BATCH_SIZE' : 32 , 'C' : 3 , 'H' : 247 , 'W' : 120 , 'model_name' : 'DenseNet' , 'dir' : './', 'densenet_variant' : 169})
 
 # resnet = RGB_Resnet(config={'num_classes': 98, 'lr' : 0.001 , 'BATCH_SIZE' : 32 , 'C' : 3 , 'H' : 247 , 'W' : 120 ,
-#                             'model_name' : 'Resnet' , 'dir' : './', 'variant' : 101})
+#                             'model_name' : 'Resnet' , 'dir' : './', 'resnet_variant' : 34})
 
 
-# # dnet = DenseNet(densenet_variant = [12, 18, 24, 6] , in_channels=168, num_classes=98 , compression_factor=0.3 , k = 32 , config={'num_classes': 98, 'lr' : 0.001 , 'BATCH_SIZE' : 32 , 'C' : 168 , 'H' : 40 , 'W' : 24 , 'model_name' : 'DenseNet' , 'dir' : './'})
+# dnet = DenseNet(densenet_variant = [12, 18, 24, 6] , in_channels=168, num_classes=98 , compression_factor=0.25, k = 32 , config={'num_classes': 98, 'lr' : 0.001 , 'BATCH_SIZE' : 32 , 'C' : 168 , 'H' : 40 , 'W' : 24 , 'model_name' : 'DenseNet' , 'dir' : './'})
 
-# x = torch.rand((32, 3 ,40,70))
+config = {
+    'num_classes': 98,
+    'lr' : 0.001,
+    'BATCH_SIZE' : 32,
+    'C' : 168,
+    'H' : 40,
+    'W' : 24,
+    'model_name' : 'HSIModel',
+    'dir' : './',
+    'in_channels' : 168 ,
+    "k" : 64 ,
+    "compression_factor" : 0.25,
+    'apply_BAM' : False,
+    'densenet_variant' : "123"
+}
 
-# y = resnet.forward(x)
-# print('\n\n\n\n\n', y.shape)
+dnet =DenseNet(densenet_variant = [12, 18, 24, 6] , config = config).to('cuda')
+x = torch.rand((32, 168 ,40,24)).to('cuda')
+
+y = dnet.forward(x)
+print('\n\n\n\n\n', y.shape)

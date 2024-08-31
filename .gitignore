@@ -8,3 +8,6 @@ models/ensemble/Classifier_Prediction_Data
 **/ckpts/
 **/evaluations/
 Data/hsi_pca
+results
+wandb
+densenet-[24,18,10, 16]__var-96__fold-4

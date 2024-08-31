@@ -1,5 +1,5 @@
 import pandas as pd
-from train_eval import MyDataset
+from models.train_eval import MyDataset
 from processing.utils import read_yaml
 from torchvision import transforms
 
@@ -23,14 +23,14 @@ val_hsi_transforms = transforms.Compose([
 ])
 
 
-df_tr = pd.read_csv(config['tr_path']).iloc[:,[1,3]]
+df_tr = pd.read_csv(data_config['tr_path']).iloc[:,[1,3]]
 df_tr.columns = ['img_path' , 'class_id']
 tr_dataset = MyDataset(df_tr,hsi_preprocessing= config['preprocessing'] , transforms_=hsi_img_transforms , data_dir = config['data_dir'])
 
-df_val = pd.read_csv(config['val_path']).iloc[:,[1,3]]
+df_val = pd.read_csv(data_config['val_path']).iloc[:,[1,3]]
 df_val.columns = ['img_path' , 'class_id']
 val_dataset = MyDataset(df_val,hsi_preprocessing= config['preprocessing'] , transforms_= val_hsi_transforms,  data_dir = config['data_dir'])
 
-df_tst = pd.read_csv(config['val_path']).iloc[:,[1,3]]
+df_tst = pd.read_csv(data_config['val_path']).iloc[:,[1,3]]
 df_tst.columns = ['img_path' , 'class_id']
 tst_dataset = MyDataset(df_tst, hsi_preprocessing= config['preprocessing'] , transforms_= val_hsi_transforms , data_dir = config['data_dir'])

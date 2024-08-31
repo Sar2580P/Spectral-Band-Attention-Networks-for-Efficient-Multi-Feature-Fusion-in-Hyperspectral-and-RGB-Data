@@ -1,27 +1,27 @@
 from models.train_eval import Classifier
 from torch.utils.data import DataLoader
 from models.model_architectures import RGB_Resnet , DenseNetRGB , GoogleNet
-from callbacks import early_stop_callback, checkpoint_callback, rich_progress_bar, rich_model_summary
+from models.callbacks import early_stop_callback, checkpoint_callback, rich_progress_bar, rich_model_summary
 from processing.utils import read_yaml
 from pytorch_lightning import Trainer
 from pytorch_lightning.loggers import WandbLogger, CSVLogger
-from data_loading import tr_dataset, val_dataset, tst_dataset
+from models.rgb.data_loading import tr_dataset, val_dataset, tst_dataset
 import pickle
-import torch 
-import os 
+import torch
+import os
 
 torch.set_float32_matmul_precision('high')
-config = read_yaml('models/rgb/model_config.yaml')
+config = read_yaml('models/rgb/config.yaml')
 
 get_model = {
     'resnet' : RGB_Resnet,
     'densenet' : DenseNetRGB,
-    'google_net' : GoogleNet, 
+    'google_net' : GoogleNet,
 }
 
 #___________________________________________________________________________________________________________________
-tr_loader = DataLoader(tr_dataset, batch_size=config['BATCH_SIZE'], shuffle=True, num_workers=config['num_workers']) 
-val_loader = DataLoader(val_dataset, batch_size=config['BATCH_SIZE'], shuffle=False, num_workers=config['num_workers']) 
+tr_loader = DataLoader(tr_dataset, batch_size=config['BATCH_SIZE'], shuffle=True, num_workers=config['num_workers'])
+val_loader = DataLoader(val_dataset, batch_size=config['BATCH_SIZE'], shuffle=False, num_workers=config['num_workers'])
 tst_loader = DataLoader(tst_dataset, batch_size=config['BATCH_SIZE'], shuffle=False, num_workers=config['num_workers'])
 
 #___________________________________________________________________________________________________________________
@@ -37,7 +37,7 @@ RESULT_DIR = os.path.join(config['dir'], f"classes-{config['num_classes']}" , f"
 
 if not os.path.exists(RESULT_DIR):
   os.makedirs(RESULT_DIR)
-  
+
 checkpoint_callback.dirpath = os.path.join(RESULT_DIR, 'ckpts')
 checkpoint_callback.filename = model_obj.model_name +'--'+ config['ckpt_file_name']
 
@@ -49,7 +49,7 @@ trainer = Trainer(callbacks=[early_stop_callback, checkpoint_callback, rich_prog
                   accelerator = 'gpu' ,max_epochs=config['MAX_EPOCHS'], logger=[wandb_logger, csv_logger])
 
 trainer.fit(model, tr_loader, val_loader)
-trainer.test(model, tst_loader)
+trainer.test(model, dataloaders= tst_loader)
 
 if not os.path.exists(os.path.join(RESULT_DIR, 'evaluations')):
   os.mkdir(os.path.join(RESULT_DIR, 'evaluations'))

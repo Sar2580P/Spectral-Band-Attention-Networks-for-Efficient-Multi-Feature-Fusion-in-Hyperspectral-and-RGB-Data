@@ -1,7 +1,7 @@
 from models.train_eval import Classifier
 from torch.utils.data import DataLoader
 from models.model_architectures import DenseNet
-from callbacks import early_stop_callback, checkpoint_callback, rich_progress_bar, rich_model_summary
+from models.callbacks import early_stop_callback, checkpoint_callback, rich_progress_bar, rich_model_summary
 from processing.utils import read_yaml
 from pytorch_lightning import Trainer
 from pytorch_lightning.loggers import WandbLogger, CSVLogger
@@ -23,7 +23,7 @@ densenet_model_parameters={
 
 if config['model_name'] == 'densenet':
     model_obj = DenseNet(densenet_variant = densenet_model_parameters[config['densenet_variant']] ,config=config)
-    
+
 model = Classifier(model_obj)
 # hsi_dense_net_ckpt = 'models/hsi/dense_net/ckpts/dense_net--epoch=129-val_loss=0.39-val_accuracy=0.87.ckpt'
 # model = Classifier.load_from_checkpoint(hsi_dense_net_ckpt, model_obj=model_obj)
@@ -54,7 +54,7 @@ trainer = Trainer(callbacks=[early_stop_callback, checkpoint_callback, rich_prog
 
 trainer.fit(model, tr_loader, val_loader)
 trainer.test(model, tst_loader)
-  
+
 if not os.path.exists(os.path.join(RESULT_DIR, 'evaluations')):
   os.mkdir(os.path.join(RESULT_DIR, 'evaluations'))
 
