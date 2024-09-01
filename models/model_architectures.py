@@ -11,7 +11,7 @@ from pytorch_lightning import LightningModule
 def plot_model( config , model):
   model_graph = draw_graph(model, input_size=(config['BATCH_SIZE'] , config['C'] , config['H'] , config['W']), graph_dir ='TB', expand_nested=True,
                             graph_name=config['model_name'],save_graph=True,filename=config['model_name'],
-                            directory=config['dir'], depth = 7)
+                            directory=config['dir'], depth = 3)
   model_graph.visual_graph
 
 #___________________________________________________________________________________________________________________
@@ -198,7 +198,7 @@ class HSIModel(nn.Module):
 #___________________________________________________________________________________________________________________
 
 class DenseNet(nn.Module):
-    def __init__(self,densenet_variant, config):
+    def __init__(self,densenet_variant, config, plot_model_arch = True):
 
         super(DenseNet,self).__init__()
 
@@ -211,17 +211,12 @@ class DenseNet(nn.Module):
         self.model = self.get_model()
         self.layer_lr = [{'params' : self.model.parameters() , 'lr' : self.config['lr'] * 1}]
         self.model_name = config['model_name']+'-'+config['densenet_variant']
-        # plot_model(config={'BATCH_SIZE':32 , 'C' : 168 , 'H' : 40 , 'W' : 24 , 'model_name' : 'radhe-shyam' , 'dir' : './'} , model=self.model)
+
+        if plot_model_arch:
+          plot_model(config={'BATCH_SIZE':32 , 'C' : 168 , 'H' : 40 , 'W' : 24 , 'model_name' : f"hsi_{self.densenet_variant}" , 'dir' : 'pics'} , model=self.model)
 
     def get_model(self):
 
-        # seq_1 =  nn.Sequential(
-        #               nn.Conv2d(in_channels=self.in_channels ,out_channels=64 ,kernel_size=7 ,stride=2 ,padding=3 ,bias = False) ,
-        #               nn.BatchNorm2d(num_features=64) ,
-        #               nn.ReLU() ,
-        #               nn.MaxPool2d(kernel_size=2, stride=2) ,
-        #             )
-        #----------------------------------------------------------------------------------------------------------------------------
         # adding 3 DenseBlocks and 3 Transition Layers
         self.deep_nn = nn.ModuleList()
         dense_block_inchannels = self.in_channels
@@ -241,7 +236,7 @@ class DenseNet(nn.Module):
 
         seq_2 = nn.Sequential(
                           *self.deep_nn ,
-                          # nn.BatchNorm2d(num_features=self.dense_block_inchannels)  ,
+                          nn.BatchNorm2d(num_features=self.dense_block_inchannels)  ,
                           nn.ReLU() ,
                           # # Average Pool
                           nn.AdaptiveAvgPool2d(1),
@@ -310,24 +305,24 @@ class Varietal4_Classification(nn.Module):
 
 # dnet = DenseNet(densenet_variant = [12, 18, 24, 6] , in_channels=168, num_classes=98 , compression_factor=0.25, k = 32 , config={'num_classes': 98, 'lr' : 0.001 , 'BATCH_SIZE' : 32 , 'C' : 168 , 'H' : 40 , 'W' : 24 , 'model_name' : 'DenseNet' , 'dir' : './'})
 
-config = {
-    'num_classes': 98,
-    'lr' : 0.001,
-    'BATCH_SIZE' : 32,
-    'C' : 168,
-    'H' : 40,
-    'W' : 24,
-    'model_name' : 'HSIModel',
-    'dir' : './',
-    'in_channels' : 168 ,
-    "k" : 64 ,
-    "compression_factor" : 0.25,
-    'apply_BAM' : False,
-    'densenet_variant' : "123"
-}
+# config = {
+#     'num_classes': 98,
+#     'lr' : 0.001,
+#     'BATCH_SIZE' : 32,
+#     'C' : 168,
+#     'H' : 40,
+#     'W' : 24,
+#     'model_name' : 'HSIModel',
+#     'dir' : './',
+#     'in_channels' : 168 ,
+#     "k" : 64 ,
+#     "compression_factor" : 0.25,
+#     'apply_BAM' : False,
+#     'densenet_variant' : "123"
+# }
 
-dnet =DenseNet(densenet_variant = [12, 18, 24, 6] , config = config).to('cuda')
-x = torch.rand((32, 168 ,40,24)).to('cuda')
+# dnet =DenseNet(densenet_variant = [12, 18, 24, 6] , config = config).to('cuda')
+# x = torch.rand((32, 168 ,40,24)).to('cuda')
 
-y = dnet.forward(x)
-print('\n\n\n\n\n', y.shape)
+# y = dnet.forward(x)
+# print('\n\n\n\n\n', y.shape)

@@ -13,10 +13,10 @@ densenet_variant: densenet_mini
 dir: results/hsi
 fold: 4
 k: 32
-lr: 7.44e-06
+lr: 0.000001489
 modality: hsi
 model_name: densenet
 num_classes: 96
 num_workers: 8
 preprocessing: none
-weight_decay: 3.0e-08
+weight_decay: 0.000001898

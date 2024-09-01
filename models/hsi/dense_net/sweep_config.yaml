@@ -35,15 +35,15 @@ parameters :
   C :
     value : 168
   lr :
-    value :  0.000009489
+    value :  0.000002489
     # min : 0.000001
     # max : 0.00001
   weight_decay :
-    value : 0.000001898
+    value : 0.000001198
     # min : 1.0e-7
     # max : 1.0e-5
   BATCH_SIZE:
-    value : 64
+    value : 32
     # distribution: 'q_log_uniform_values'
     # max: 128
     # min: 32
@@ -51,7 +51,7 @@ parameters :
   MAX_EPOCHS :
     value : 200
   accumulate_grad_batches:
-    value : 3
+    value : 4
   model_size :
     value : [12,18,24, 6]
     # values :

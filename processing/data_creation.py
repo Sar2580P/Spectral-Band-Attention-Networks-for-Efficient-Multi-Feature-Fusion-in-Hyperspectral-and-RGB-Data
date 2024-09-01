@@ -30,9 +30,10 @@ def create_folds(final_df, variety_count, num_folds=5):
 
     # Replace class_ids in df with the corresponding keys from class_mapping
     df['class_label'] = df['original_class_label'].map({v: k for k, v in class_mapping.items()})
+    df['stratify_col(class_label+plate_count)'] = df['class_label'].astype(str) + '_' + df['plate_count'].astype(str)
 
     skf = StratifiedKFold(n_splits=num_folds, random_state=42, shuffle=True)
-    for fold, (train_index, val_index) in enumerate(skf.split(df, df.loc[:, 'class_label'])):
+    for fold, (train_index, val_index) in enumerate(skf.split(df, df.loc[:, 'stratify_col(class_label+plate_count)'])):
 
       if not os.path.exists(os.path.join(BASE_PATH, f'fold_{fold}')):
         os.mkdir(os.path.join(BASE_PATH, f'fold_{fold}'))
@@ -88,22 +89,24 @@ def data_4_varietal(mapping_4variety, base_mapping, final_df_path='Data/final_df
 
 
 if __name__ == '__main__':
-  
+
   if not os.path.exists('Data/final_df.csv'):
     hsi_df = pd.read_csv('Data/hsi.csv')
-    final_df = pd.DataFrame(columns=['rgb_path', 'hsi_path' , 'class_id'])
+    final_df = pd.DataFrame(columns=['rgb_path', 'hsi_path' , 'class_id' , 'plate_count'])
     for i in tqdm(range(len(hsi_df)), desc='Creating final df with all files'):
 
       rgb_path =  hsi_df.iloc[i,0][:-4]+'.png'
+      plate_count = int(hsi_df.iloc[i,0][:-4].split('_')[1])//72   # plate_count=0 for 1st plate, 1 for 2nd plate
       hsi_path =  hsi_df.iloc[i,0]
       class_id = hsi_df.iloc[i,1]
-      final_df.loc[len(final_df)] = [rgb_path , hsi_path , class_id]
+      final_df.loc[len(final_df)] = [rgb_path , hsi_path , class_id , plate_count]
 
     final_df.to_csv('Data/final_df.csv' , index = False)
-  
-  li = [12,24,37 , 55 , 75 , 96 , 98]
-  for class_count in li:
-    create_folds(pd.read_csv('Data/final_df.csv'), class_count)
+
+  if not os.path.exists('Data/96'):
+    li = [12, 24 , 37, 55 , 75 , 96]
+    for class_count in li:
+      create_folds(pd.read_csv('Data/final_df.csv'), class_count)
 
 
   # data_4_varietal(mapping_4variety='Data/varietal_4/4_varietal.json' , base_mapping='Data/98/98_var_mappings.json')

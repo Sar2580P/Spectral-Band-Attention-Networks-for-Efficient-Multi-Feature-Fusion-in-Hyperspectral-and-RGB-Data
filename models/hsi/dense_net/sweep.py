@@ -21,7 +21,7 @@ def train(config=None):
         config = wandb.config
 
         if config['model_name'] == 'densenet':
-            model_obj = DenseNet(densenet_variant=config['model_size'], config=config)
+            model_obj = DenseNet(densenet_variant=config['model_size'], config=config, plot_model_arch=False)
 
         model = Classifier(model_obj)
 
