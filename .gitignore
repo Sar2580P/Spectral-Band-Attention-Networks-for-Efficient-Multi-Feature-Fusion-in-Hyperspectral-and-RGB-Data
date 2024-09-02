@@ -10,4 +10,4 @@ models/ensemble/Classifier_Prediction_Data
 Data/hsi_pca
 results
 wandb
-densenet-[24,18,10, 16]__var-96__fold-4
+densenet-[12,18,24, 6]__var-96__fold-4

@@ -22,7 +22,7 @@ parameters :
   num_classes :
     value: 96
   apply_BAM:
-    value : false
+    value : False
   fold:
     value : 4
 
@@ -39,7 +39,7 @@ parameters :
     # min : 0.000001
     # max : 0.00001
   weight_decay :
-    value : 0.000001198
+    value : 0.0000001198
     # min : 1.0e-7
     # max : 1.0e-5
   BATCH_SIZE:
@@ -51,7 +51,7 @@ parameters :
   MAX_EPOCHS :
     value : 200
   accumulate_grad_batches:
-    value : 4
+    value : 2
   model_size :
     value : [12,18,24, 6]
     # values :
@@ -68,15 +68,14 @@ parameters :
       - 0.3
       - 0.35
       - 0.4
-      - 0.45
-      - 0.5
+
   k :
     # value : 32
     values :
       - 16
       - 32
       - 48
-      - 64
+
   densenet_variant :
     value : '[12,18,24, 6]'
     # values : ["densenet_mini", "densenet"]

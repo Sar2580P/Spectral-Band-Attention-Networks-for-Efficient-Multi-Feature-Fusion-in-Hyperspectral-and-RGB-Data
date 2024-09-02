@@ -1,22 +1,24 @@
-BATCH_SIZE: 128
-C: 168
+BATCH_SIZE: 48
+C: 158
 H: 40
 MAX_EPOCHS: 300
 W: 24
 apply_BAM: false
 apply_bam: false
 ckpt_file_name: '{epoch}-{val_loss:.2f}-{val_accuracy:.2f}'
-compression_factor: 0.3
-data_dir: Data/hsi
+compression_factor: 0.35
+data_dir: Data/hsi_trimmed
 data_type: original
 densenet_variant: densenet_mini
 dir: results/hsi
 fold: 4
 k: 32
-lr: 0.000001489
+lr: 0.0000001489
+accumulate_grad_batches : 2
 modality: hsi
 model_name: densenet
+activation_func : elu    # elu ,silu, prelu ,gelu
 num_classes: 96
 num_workers: 8
 preprocessing: none
-weight_decay: 0.000001898
+weight_decay: 0.000001

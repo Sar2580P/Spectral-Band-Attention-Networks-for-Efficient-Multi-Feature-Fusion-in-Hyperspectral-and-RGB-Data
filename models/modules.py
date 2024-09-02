@@ -1,6 +1,21 @@
 import torch.nn as nn
 import torch
 
+
+def get_activation_function(name: str)-> nn.Module:
+    activations = {
+        "elu": nn.ELU(),
+        "silu": nn.SiLU(),
+        "prelu": nn.PReLU(),
+        "gelu": nn.GELU()
+    }
+
+    # Return the activation function if the name is found, otherwise raise an error
+    if name.lower() in activations:
+        return activations[name.lower()]
+    else:
+        raise ValueError(f"Unsupported activation function: {name}. Choose from: {list(activations.keys())}")
+
 class FC(nn.Module):
     def __init__(self, drop ,in_size, out_size):
       super(FC ,self).__init__()
@@ -18,16 +33,17 @@ class FC(nn.Module):
 #___________________________________________________________________________________________________________________
 
 class Composite(nn.Module):
-  def __init__(self , in_channels, out_channels, kernel_size=(3,3),padding = 'same',  stride = 1):
+  def __init__(self , in_channels, out_channels, kernel_size=(3,3),padding = 'same',  stride = 1 , activation = 'prelu'):
     super(Composite, self).__init__()
     self.in_channels , self.out_channels = in_channels , out_channels
     self.kernel_size , self.padding , self.stride = kernel_size , padding , stride
+    self.activation = activation
     self.model = self.get_model()
 
   def get_model(self):
     return nn.Sequential(
         nn.BatchNorm2d(self.in_channels ),
-        nn.PReLU(),
+        get_activation_function(self.activation),
         nn.Conv2d(in_channels = self.in_channels  , out_channels = self.out_channels ,
                   kernel_size = self.kernel_size ,padding = self.padding)
     )
@@ -155,16 +171,17 @@ class ResidualBlock(nn.Module):
 #__________________________________________ DENSE_NET _________________________________________________________________________
 
 class BottleNeck(nn.Module):
-  def __init__(self, in_channels,  k = 32):
+  def __init__(self, in_channels,  k = 32 , activation = 'prelu'):
     super(BottleNeck, self).__init__()
     self.in_channels = in_channels
     self.k = k
+    self.activation = activation
     self.model = self.get_model()
 
   def get_model(self):
     return nn.Sequential(
-        Composite(in_channels = self.in_channels ,kernel_size = (1,1) , out_channels = 4*self.k, padding=0) ,
-        Composite(in_channels = 4*self.k ,kernel_size = (3,3) , out_channels = self.k ,padding = 1) ,
+        Composite(in_channels = self.in_channels ,kernel_size = (1,1) , out_channels = 4*self.k, padding=0 , activation=self.activation) ,
+        Composite(in_channels = 4*self.k ,kernel_size = (3,3) , out_channels = self.k ,padding = 1 , activation=self.activation) ,
     )
 
   def forward(self, x):
@@ -175,7 +192,7 @@ class BottleNeck(nn.Module):
 
 #___________________________________________________________________________________________________________________
 class DenseBlock(nn.Module):
-    def __init__(self , layer_num , in_channels, k):
+    def __init__(self , layer_num , in_channels, k , activation ='prelu'):
         """
         Looping through total number of layers in the denseblock.
         Adding k number of channels in each loop as each layer generates tensor with k channels.
@@ -189,13 +206,14 @@ class DenseBlock(nn.Module):
         self.layer_num = layer_num
         self.k = k
         self.in_channels = in_channels
+        self.activation = activation
         self.model = self.get_model()
 
     def get_model(self):
 
         self.deep_nn = nn.ModuleList()
         for num in range(self.layer_num):
-            self.deep_nn.add_module(f"DenseLayer_{num}",BottleNeck(in_channels=self.in_channels + self.k*num , k = self.k))
+            self.deep_nn.add_module(f"DenseLayer_{num}",BottleNeck(in_channels=self.in_channels + self.k*num , k = self.k ,activation = self.activation))
         return nn.Sequential(*self.deep_nn)
 
 

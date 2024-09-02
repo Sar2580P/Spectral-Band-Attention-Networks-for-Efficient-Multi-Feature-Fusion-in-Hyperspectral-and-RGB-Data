@@ -2,11 +2,11 @@ import torchvision
 import torch.nn as nn
 from models.modules import (BandAttentionBlock, Composite, FC,
                             ResidualBlock, SqueezeBlock, XceptionBlock,
-                            SeparableConvBlock, DenseBlock, TransitionLayer)
+                            SeparableConvBlock, DenseBlock, TransitionLayer ,
+                            get_activation_function)
 import torch
 from torchview import draw_graph
 from pytorch_lightning import LightningModule
-
 
 def plot_model( config , model):
   model_graph = draw_graph(model, input_size=(config['BATCH_SIZE'] , config['C'] , config['H'] , config['W']), graph_dir ='TB', expand_nested=True,
@@ -208,12 +208,13 @@ class DenseNet(nn.Module):
         self.compression_factor = config['compression_factor']
         self.k = config['k']
         self.config = config
+        self.activation_func =config['activation_func']
         self.model = self.get_model()
         self.layer_lr = [{'params' : self.model.parameters() , 'lr' : self.config['lr'] * 1}]
         self.model_name = config['model_name']+'-'+config['densenet_variant']
 
         if plot_model_arch:
-          plot_model(config={'BATCH_SIZE':32 , 'C' : 168 , 'H' : 40 , 'W' : 24 , 'model_name' : f"hsi_{self.densenet_variant}" , 'dir' : 'pics'} , model=self.model)
+          plot_model(config={'BATCH_SIZE':32 , 'C' : self.in_channels , 'H' : 40 , 'W' : 24 , 'model_name' : f"hsi_{self.densenet_variant}" , 'dir' : 'pics'} , model=self.model)
 
     def get_model(self):
 
@@ -223,21 +224,20 @@ class DenseNet(nn.Module):
 
         for num in range(len(self.densenet_variant))[:-1]:
 
-            self.deep_nn.add_module( f"DenseBlock_{num+1}" , DenseBlock( self.densenet_variant[num] , dense_block_inchannels ,  k = self.k)  )
+            self.deep_nn.add_module( f"DenseBlock_{num+1}" , DenseBlock( self.densenet_variant[num] , dense_block_inchannels ,  k = self.k , activation = self.activation_func)  )
             dense_block_inchannels  = int(dense_block_inchannels + self.k * self.densenet_variant[num])
 
-            self.deep_nn.add_module( f"TransitionLayer_{num+1}" , TransitionLayer( dense_block_inchannels, self.compression_factor ) )
+            self.deep_nn.add_module( f"TransitionLayer_{num+1}" , TransitionLayer( dense_block_inchannels, self.compression_factor) )
             dense_block_inchannels = int(dense_block_inchannels * self.compression_factor)
 
         # adding the 4th and final DenseBlock
-        self.deep_nn.add_module( f"DenseBlock_{num+2}" , DenseBlock( self.densenet_variant[-1] , dense_block_inchannels  , k = self.k) )
+        self.deep_nn.add_module( f"DenseBlock_{num+2}" , DenseBlock( self.densenet_variant[-1] , dense_block_inchannels  , k = self.k , activation = self.activation_func) )
         self.dense_block_inchannels  = int(dense_block_inchannels + self.k * self.densenet_variant[-1])
         #----------------------------------------------------------------------------------------------------------------------------
 
         seq_2 = nn.Sequential(
                           *self.deep_nn ,
-                          nn.BatchNorm2d(num_features=self.dense_block_inchannels)  ,
-                          nn.ReLU() ,
+                           get_activation_function(self.activation_func),
                           # # Average Pool
                           nn.AdaptiveAvgPool2d(1),
                           nn.Flatten(1) ,

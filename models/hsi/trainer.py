@@ -50,7 +50,7 @@ csv_logger = CSVLogger(RESULT_DIR+'/logs/'+ file_name)
 
 
 trainer = Trainer(callbacks=[early_stop_callback, checkpoint_callback, rich_progress_bar, rich_model_summary],
-                  accelerator = 'gpu' ,max_epochs=config['MAX_EPOCHS'], logger=[wandb_logger, csv_logger])
+                  accelerator = 'gpu' ,accumulate_grad_batches=config['accumulate_grad_batches'] , max_epochs=config['MAX_EPOCHS'], logger=[wandb_logger, csv_logger])
 
 trainer.fit(model, tr_loader, val_loader)
 trainer.test(model, tst_loader)

@@ -16,7 +16,7 @@ class MobileNet():
     self.config = config
     self.model = self.get_model()
     # print(self.model)
-    plot_model(config={'BATCH_SIZE':32 , 'C' : 3 , 'H' : 40 , 'W' : 32 , 'model_name' : f"convnext" , 'dir' : 'pics'} , model=self.model)
+    plot_model(config={'BATCH_SIZE':32 , 'C' : 3 , 'H' : 40 , 'W' : 33 , 'model_name' : f"convnext" , 'dir' : 'pics'} , model=self.model)
     # self.layer_lr = [{'params' : self.base_model.parameters()},{'params': self.head.parameters(), 'lr': self.config['lr'] * 20}]
 
 

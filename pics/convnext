@@ -5,7 +5,7 @@ strict digraph convnext {
 	0 [label=<
                     <TABLE BORDER="0" CELLBORDER="1"
                     CELLSPACING="0" CELLPADDING="4">
-                        <TR><TD>input-tensor<BR/>depth:0</TD><TD>(32, 3, 40, 32)</TD></TR>
+                        <TR><TD>input-tensor<BR/>depth:0</TD><TD>(32, 3, 40, 33)</TD></TR>
                     </TABLE>> fillcolor=lightyellow]
 	subgraph cluster_2 {
 		fontsize=12 label=Sequential labeljust=l style=dashed
@@ -17,7 +17,7 @@ strict digraph convnext {
                     <TR>
                         <TD ROWSPAN="2">Conv2d<BR/>depth:3</TD>
                         <TD COLSPAN="2">input:</TD>
-                        <TD COLSPAN="2">(32, 3, 40, 32) </TD>
+                        <TD COLSPAN="2">(32, 3, 40, 33) </TD>
                     </TR>
                     <TR>
                         <TD COLSPAN="2">output: </TD>
