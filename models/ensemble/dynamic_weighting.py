@@ -1,28 +1,13 @@
 import pandas as pd
 import numpy as np
-from sklearn.metrics import *
 import math, os
+from sklearn.metrics import roc_curve ,auc, classification_report, confusion_matrix, balanced_accuracy_score
+import matplotlib.pyplot as plt
 from sklearn.preprocessing import label_binarize
-
-def getfile(filename):
-    root=''
-    file = root+filename
-    if '.csv' not in filename:
-        file = file+'.csv'
-    df = pd.read_csv(file,header=None)
-    df = np.asarray(df)
-
-    labels=[]
-    for i, c in enumerate(os.listdir(root+"data/val/")):
-        for j in range(len(os.listdir(root+"data/val/"+c))):
-            labels.append(i)
-    labels = np.asarray(labels)
-    return df,labels
-
+from tqdm import tqdm
 #_______________________________________________________________________________________________________________________
 #ROC-AUC
-from sklearn.metrics import roc_curve,auc
-import matplotlib.pyplot as plt
+
 def plot_roc(val_label,decision_val, caption='ROC Curve'):
     num_classes=np.unique(val_label).shape[0]
     classes = []
@@ -30,7 +15,7 @@ def plot_roc(val_label,decision_val, caption='ROC Curve'):
         classes.append(i)
     plt.figure()
     decision_val = label_binarize(decision_val, classes=classes)
-    
+
     if num_classes!=2:
         # Compute ROC curve and ROC area for each class
         fpr = dict()
@@ -55,7 +40,7 @@ def plot_roc(val_label,decision_val, caption='ROC Curve'):
     plt.ylabel('True Positive Rate')
     plt.title(caption)
     plt.legend(loc="lower right")
-    plt.savefig(str(len(classes))+'.png',dpi=300)
+    plt.savefig(f"pics/ROC CURVE_classes-{num_classes}.png",dpi=300)
 
 #_______________________________________________________________________________________________________________________
 def predicting(ensemble_prob):
@@ -83,7 +68,7 @@ def fuzzy_rank(CF, top):
         for j in range(CF.shape[1]):
             for k in range(CF.shape[2]):
                 R_L[i][j][k] = 1 - math.exp(-math.exp(-2.0*CF[i][j][k]))  #Gompertz Function
-    
+
     K_L = 0.632*np.ones(shape = R_L.shape) #initiate all values as penalty values
     for i in range(R_L.shape[0]):
         for sample in range(R_L.shape[1]):
@@ -119,16 +104,17 @@ def soft_max(mat):
 
 
 #_______________________________________________________________________________________________________________________
-def Gompertz(argv, top = 2, ):
+def Gompertz(argv, num_classes, top = 2):
     L = 0 #Number of classifiers
     for arg in argv:
         L += 1
 
-    num_classes = 98
     CF = np.zeros(shape = (L,argv[0].shape[0], num_classes))
 
     for i, arg in enumerate(argv):
-        arg = soft_max(arg.to_numpy())
+        if not isinstance(arg, np.ndarray):
+            arg = arg.to_numpy()
+        arg = soft_max(arg)
         CF[i][:][:] = arg
 
     R_L = fuzzy_rank(CF, top) #R_L is with penalties
@@ -139,3 +125,39 @@ def Gompertz(argv, top = 2, ):
 
     predictions = np.argmin(FS,axis=1)
     return predictions
+
+#_______________________________________________________________________________________________________________________
+
+
+def get_ensemble_performance(num_classes:int, type : str = 'train'):
+    BASE_DIR = f"results/ensemble/base_models/classes-{num_classes}"
+    assert os.path.exists(BASE_DIR), f"Source directory {BASE_DIR} does not exist"
+    top = 30   # top 'k' classes
+    classes = []
+    for i in range(num_classes):
+        classes.append(str(i+1))
+
+    for fold in tqdm(range(5) ,desc = f"Gompertz Ensemble fold"):
+        true_labels = None
+        p = []
+        data_dir = os.path.join(BASE_DIR , f"fold_{fold}")
+        files = [f for f in os.listdir(data_dir) if f.endswith(f'{type}.npy')]
+        files.sort()    # sorting to maintain cossistency in base models ordering
+        for base_prediction_file in files:
+            mat = np.load(os.path.join(data_dir, base_prediction_file))
+            p.append( mat[:, :-1] )
+            true_labels = mat[:, -1] if true_labels is None else true_labels
+
+        predictions = Gompertz(top=top,num_classes=num_classes , argv = tuple(p))
+        correct = np.where(predictions == true_labels)[0].shape[0]
+        total = true_labels.shape[0]
+        acc = correct/total
+
+        print(f"{fold} : Accuracy =   ",acc*100)
+
+        # metrics(true_labels,predictions,classes)
+
+
+
+if __name__=="__main__":
+    get_ensemble_performance(96)
