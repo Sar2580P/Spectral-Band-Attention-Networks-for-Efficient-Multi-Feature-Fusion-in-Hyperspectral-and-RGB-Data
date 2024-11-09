@@ -2,6 +2,7 @@ from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from pytorch_lightning.callbacks import ModelCheckpoint, RichProgressBar, RichModelSummary
 from  pytorch_lightning.callbacks.progress.rich_progress import RichProgressBarTheme
 from processing.utils import read_yaml
+from pytorch_lightning.callbacks import LearningRateMonitor
 
 config = read_yaml('models/rgb/config.yaml')
 
@@ -26,3 +27,6 @@ checkpoint_callback = ModelCheckpoint(
     verbose=ckpt_config['verbose'],
     mode=ckpt_config['mode'],
  )
+
+
+lr_monitor = LearningRateMonitor(logging_interval='step')
