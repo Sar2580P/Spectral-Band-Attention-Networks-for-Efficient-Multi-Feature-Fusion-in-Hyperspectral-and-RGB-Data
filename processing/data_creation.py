@@ -7,9 +7,6 @@ from sklearn.model_selection import StratifiedKFold, train_test_split
 from tqdm import tqdm
 
 
-#__________________________________________________________________________________________________________________
-
-
 def create_folds(final_df, variety_count, num_folds=5):
     BASE_PATH = 'Data/' + str(variety_count)
 
@@ -32,7 +29,7 @@ def create_folds(final_df, variety_count, num_folds=5):
     df['class_label'] = df['original_class_label'].map({v: k for k, v in class_mapping.items()})
     df['stratify_col(class_label+plate_count)'] = df['class_label'].astype(str) + '_' + df['plate_count'].astype(str)
 
-    skf = StratifiedKFold(n_splits=num_folds, random_state=42, shuffle=True)
+    skf = StratifiedKFold(n_splits=num_folds, random_state=7, shuffle=True)
     for fold, (train_index, val_index) in enumerate(skf.split(df, df.loc[:, 'stratify_col(class_label+plate_count)'])):
 
       if not os.path.exists(os.path.join(BASE_PATH, f'fold_{fold}')):
@@ -104,7 +101,7 @@ if __name__ == '__main__':
     final_df.to_csv('Data/final_df.csv' , index = False)
 
   if not os.path.exists('Data/96'):
-    li = [12, 24 , 37, 55 , 75 , 96]
+    li = [12, 24 , 37, 55 , 75 , 96, 98]
     for class_count in li:
       create_folds(pd.read_csv('Data/final_df.csv'), class_count)
 

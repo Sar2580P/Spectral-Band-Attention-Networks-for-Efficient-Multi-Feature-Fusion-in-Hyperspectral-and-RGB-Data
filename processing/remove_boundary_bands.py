@@ -4,8 +4,8 @@ import tqdm
 import pandas as pd
 import matplotlib.pyplot as plt
 
-Original_HSI_DIR = 'Data/original_hsi'
-New_HSI_DIR = 'Data/hsi'
+Original_HSI_DIR = 'Data/hsi'
+New_HSI_DIR = 'Data/hsi_trimmed'
 
 # removing starting 10 bands and ending 6 bands of each hsi image
 
