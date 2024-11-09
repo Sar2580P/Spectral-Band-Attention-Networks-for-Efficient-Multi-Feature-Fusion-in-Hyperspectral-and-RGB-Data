@@ -11,8 +11,8 @@ fi
 echo -e "\n\nActivating the working environment..."
 
 
-# source .env
-# wandb login --relogin "$WANDB_API"
+source .env
+wandb login --relogin "$WANDB_API"
 export PYTHONPATH="${PYTHONPATH}:$(pwd)"
 
 chmod +x models/hsi/schedule_run.sh

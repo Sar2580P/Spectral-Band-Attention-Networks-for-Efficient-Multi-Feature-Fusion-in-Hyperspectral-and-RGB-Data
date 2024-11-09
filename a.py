@@ -1,39 +1,39 @@
-import torchvision
-from torchview import draw_graph
-from pytorch_lightning import LightningModule
-import torch.nn as nn
-from models.modules import FC
+import os
+import numpy as np
+from PIL import Image
 
-def plot_model( config , model):
-  model_graph = draw_graph(model, input_size=(config['BATCH_SIZE'] , config['C'] , config['H'] , config['W']), graph_dir ='TB', expand_nested=True,
-                            graph_name=config['model_name'],save_graph=True,filename=config['model_name'],
-                            directory=config['dir'], depth = 5)
-  model_graph.visual_graph
-
-class MobileNet():
-  # https://pytorch.org/vision/main/models/generated/torchvision.models.resnet101.html
-  def __init__(self, config ):
-    self.config = config
-    self.model = self.get_model()
-    # print(self.model)
-    plot_model(config={'BATCH_SIZE':32 , 'C' : 3 , 'H' : 40 , 'W' : 33 , 'model_name' : f"convnext" , 'dir' : 'pics'} , model=self.model)
-    # self.layer_lr = [{'params' : self.base_model.parameters()},{'params': self.head.parameters(), 'lr': self.config['lr'] * 20}]
+# Define paths
+input_dir = 'Data/hsi_seed_masks'  # Replace with the path to your .npy files
+output_dir = 'Data/shyam_sundar'  # Replace with the path to save .jpg files
 
 
 
-  def get_model(self):
-    self.mobileNet = torchvision.models.convnext_tiny(weights = 'IMAGENET1K_V1')
+# Create output directory if it doesn't exist
+os.makedirs(output_dir, exist_ok=True)
 
-    # self.base_model = nn.Sequential(*list(self.mobileNet.children())[:-1])
-    # self.head = nn.Sequential(
-    #   *list(self.mobileNet.children())[-1][:-1] ,
-    #             FC(0.2 , 1280 ,512),
-    #             FC(0.14 ,512, 256),
-    #                     )
-    return self.mobileNet
+# Function to convert binary mask to RGB
+def binary_to_rgb(binary_mask):
+    # Ensure binary_mask contains values 0 and 1, then scale to 0-255
+    rgb_mask = np.repeat(binary_mask[:, :, np.newaxis], 3, axis=2)
+    return rgb_mask.astype(np.uint8)
 
-  def forward(self, x):
-    return self.model(x)
+# Iterate through .npy files in the input directory
+for i in range(4):
+  for j in range(144) :
+        npy_file = f"{i}_{j}.npy"
+        mask = np.load(os.path.join(input_dir, npy_file))
+        # Ensure mask is binary and has the correct dimensions
+        if mask.ndim == 2:  # Ensure it's 2D
+            # Print min and max values to check if it's truly binary
+            print(f'Processing {npy_file} - Min value: {mask.min()}, Max value: {mask.max()}')
 
+            # Convert mask to RGB
+            rgb_mask = binary_to_rgb(mask)
+            print(min(mask.flatten()), max(mask.flatten()))
 
-model = MobileNet(config = {})
+            # Save as .jpg file
+            output_file = os.path.join(output_dir, npy_file.replace('.npy', '.jpg'))
+            Image.fromarray(rgb_mask).save(output_file)
+            print(f'Saved {output_file}')
+        else:
+            print(f'Skipping {npy_file} - Incorrect dimensions')
