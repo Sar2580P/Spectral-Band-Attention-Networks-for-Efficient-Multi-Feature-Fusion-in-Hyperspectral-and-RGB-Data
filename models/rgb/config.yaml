@@ -1,28 +1,40 @@
 BATCH_SIZE: 128
 C: 3
 EarlyStopping:
-  min_delta: 0.0005
+  min_delta: 0.0002
   mode: min
-  monitor: val_loss
-  patience: 5
+  monitor: cross_entropy_val_loss
+  patience: 10
   verbose: true
 H: 247
 MAX_EPOCHS: 100
 ModelCheckpoint:
   mode: min
-  monitor: val_loss
+  monitor: cross_entropy_val_loss
   save_top_k: 1
   verbose: true
 W: 120
+accumulate_grad_batches: 4
 ckpt_file_name: '{epoch}-{val_loss:.2f}-{val_accuracy:.2f}'
+cosine_annealing_lr_scheduler_params:
+  T_max: 160
+  eta_min: 1.0e-07
+cosine_warm_restarts_decay_lr_scheduler_params:
+  T_0: 10
+  T_mult: 2
+  decay: 0.8
+  eta_min: 2.0e-07
 data_dir: Data/rgb
 densenet_variant: 121
 dir: results/rgb
-fold: 4
+exponential_decay_lr_scheduler_params:
+  gamma: 0.995
+fold: 0
 lr: 7.0e-06
 modality: rgb
-model_name: google_net
+model_name: 'resnet'
 num_classes: 96
 num_workers: 8
 resnet_variant: 34
+scheduler_name: exponential_decay_lr_scheduler
 weight_decay: 9.0e-05

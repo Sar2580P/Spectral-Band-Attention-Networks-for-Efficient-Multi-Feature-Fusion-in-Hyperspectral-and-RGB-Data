@@ -2,7 +2,7 @@
 
 # Define the range of folds and the list of num_classes
 folds=(0 1 2 3 4)
-num_classes=(12 24 37 55 75 96)  # New requirement only for num_classes=96
+num_classes=(96)  # New requirement only for num_classes=96
 
 # Define the list of runner files and their corresponding config files
 runner_files=("models/rgb/trainer.py" )

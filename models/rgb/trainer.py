@@ -46,7 +46,8 @@ wandb_logger = WandbLogger(project= NAME, name = run_name)
 csv_logger = CSVLogger(RESULT_DIR+'/logs/'+ model_obj.model_name)
 
 trainer = Trainer(callbacks=[early_stop_callback, checkpoint_callback, rich_progress_bar, rich_model_summary],
-                  accelerator = 'gpu' ,max_epochs=config['MAX_EPOCHS'], logger=[wandb_logger, csv_logger])
+                  accelerator = 'gpu' ,max_epochs=config['MAX_EPOCHS'], logger=[wandb_logger, csv_logger],
+                  accumulate_grad_batches=config['accumulate_grad_batches'])
 
 trainer.fit(model, tr_loader, val_loader)
 trainer.test(model, dataloaders= tst_loader)
