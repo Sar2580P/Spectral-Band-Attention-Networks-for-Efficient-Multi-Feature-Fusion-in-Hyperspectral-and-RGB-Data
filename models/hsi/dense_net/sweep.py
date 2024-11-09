@@ -1,6 +1,7 @@
 from models.train_eval import Classifier
 from torch.utils.data import DataLoader
 from models.model_architectures import DenseNet
+from models.hsi.band_selection.bam import BandAttentionIntegrated
 from models.callbacks import rich_progress_bar, rich_model_summary
 from processing.utils import read_yaml
 from pytorch_lightning import Trainer
@@ -9,6 +10,7 @@ from models.hsi.data_loading import tr_dataset, val_dataset, tst_dataset
 import os
 import wandb
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
+import torch
 
 sweep_config =read_yaml('models/hsi/dense_net/sweep_config.yaml')
 es_config = read_yaml('models/rgb/config.yaml')['EarlyStopping']
@@ -21,7 +23,20 @@ def train(config=None):
         config = wandb.config
 
         if config['model_name'] == 'densenet':
-            model_obj = DenseNet(densenet_variant=config['model_size'], config=config, plot_model_arch=False)
+            model_obj = DenseNet(config=config, plot_model_arch=False)
+
+        elif config['model_name'] == 'sparse_bam_densenet':
+            config['sparse_bam_config'] = {
+                'r' : config['r'],
+                'beta' : config['beta'],
+                'head_model_name' : config['head_model_name'],
+                'head_model_ckpt' : config['head_model_ckpt'],
+                'sparsity_threshold' : config['sparsity_threshold'],
+                'temperature' : config['temperature']
+
+            }
+            config =  dict(config)
+            model_obj = BandAttentionIntegrated(config)
 
         model = Classifier(model_obj)
 
@@ -35,7 +50,7 @@ def train(config=None):
         if not os.path.exists(RESULT_DIR):
             os.makedirs(RESULT_DIR)
 
-        file_name = model_obj.model_name + f"__{config['data_type']}" + f"__{config['preprocessing']}" + ('__BAM' if config['apply_BAM'] else '')
+        file_name = model_obj.model_name + f"__{config['data_type']}" + f"__{config['preprocessing']}"
 
 
         run_name = f"lr_{config['lr']} *** bs{config['BATCH_SIZE']} *** decay_{config['weight_decay']}"
@@ -49,9 +64,10 @@ def train(config=None):
             verbose=es_config['verbose'],
             mode=es_config['mode']
         )
-
+        torch.set_float32_matmul_precision('high')
         trainer = Trainer(callbacks=[early_stop_callback, rich_progress_bar, rich_model_summary],
-                          accelerator='gpu', max_epochs=config['MAX_EPOCHS'], logger=[wandb_logger] , accumulate_grad_batches=config['accumulate_grad_batches'])
+                          accelerator='gpu', max_epochs=config['MAX_EPOCHS'], logger=[wandb_logger] ,
+                          accumulate_grad_batches=config['accumulate_grad_batches'])
 
         trainer.fit(model, tr_loader, val_loader)
         trainer.test(model, tst_loader)

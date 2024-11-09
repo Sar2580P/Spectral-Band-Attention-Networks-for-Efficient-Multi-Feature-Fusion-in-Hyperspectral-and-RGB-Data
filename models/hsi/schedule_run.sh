@@ -1,13 +1,13 @@
 #!/bin/bash
 
 # Define the range of folds and the list of num_classes
-folds=(4)      #(0 1 2 3 4)
-num_classes=(96)   #(12 24 37 55 75 96)
-preprocessing=('msc' 'snv' 'none')
-data_dir=('Data/hsi_pca' 'Data/hsi_trimmed' 'Data/hsi')
-C=(30 158 168)
-data_type=('pca' 'trimmed' 'original')
-apply_bam=('True' 'False')
+folds=(0 1 2 3 4)
+num_classes=(96)  #(12 24 37 55 75 96)
+preprocessing=('none')
+data_dir=('Data/hsi_masked_pcaLoading/Channel_25' 'Data/hsi_masked_pcaLoading/Channel_50' 'Data/hsi_masked_pcaLoading/Channel_75' 'Data/hsi_masked_pcaLoading/Channel_100' 'Data/hsi_masked_pcaLoading/Channel_125' 'Data/hsi_masked_pcaLoading/Channel_150' 'Data/hsi_masked_pcaLoading/Channel_168')
+C=(25 50 75 100 125 150 168)
+data_type=('maskedPCALoading')  # , 'maskedBAM' 'pcaLoading', 'maskedSPA'
+
 yaml_file="models/hsi/config.yaml"  # Path to your YAML file
 
 # Function to update the YAML file
@@ -24,14 +24,13 @@ config['fold'] = $1
 config['num_classes'] = $2
 config['preprocessing'] = '$3'
 config['data_dir'] = '$4'
-config['apply_bam'] = $5
-config['C'] = $6
-config['data_type'] = '$7'
+config['C'] = $5
+config['data_type'] = '$6'
 
 # Save updated YAML file
 with open('$yaml_file', 'w') as file:
     yaml.safe_dump(config, file)
-    " $1 $2 $3 $4 $5 $6 $7
+    " $1 $2 $3 $4 $5 $6
 }
 
 runner_file="models/hsi/trainer.py"  # Path to your Python script
@@ -41,20 +40,19 @@ for fold in "${folds[@]}"; do
     for num_class in "${num_classes[@]}"; do
         for preprocessing in "${preprocessing[@]}"; do
             for i in "${!data_dir[@]}"; do
-                for apply_bam in "${apply_bam[@]}"; do
-                    echo "Updating YAML and running $runner_file with fold=$fold, num_classes=$num_class, data_dir=${data_dir[$i]}, C=${C[$i]}, data_type=${data_type[$i]}"
+                echo "Updating YAML and running $runner_file with fold=$fold, num_classes=$num_class, data_dir=${data_dir[$i]}, C=${C[$i]}, data_type=${data_type[0]}"
 
-                    # Update the YAML file with current parameters
-                    update_yaml $fold $num_class "$preprocessing" "${data_dir[$i]}" "$apply_bam" "${C[$i]}" "${data_type[$i]}"
+                # Update the YAML file with current parameters
+                update_yaml $fold $num_class "$preprocessing" "${data_dir[$i]}" "${C[$i]}" "${data_type[0]}"
 
-                    # Run the Python script
-                    python $runner_file &
+                # Run the Python script and wait for it to complete
+                python $runner_file
+                if [ $? -ne 0 ]; then
+                    echo "Error occurred while running the trainer with fold=$fold, num_classes=$num_class, data_dir=${data_dir[$i]}, C=${C[$i]}, data_type=${data_type[0]}"
+                    exit 1
+                fi
 
-                    # Wait for the previous run to complete
-                    wait
-
-                    echo "Completed fold=$fold, num_classes=$num_class, data_dir=${data_dir[$i]}, C=${C[$i]}, data_type=${data_type[$i]}"
-                done
+                echo "Completed fold=$fold, num_classes=$num_class, data_dir=${data_dir[$i]}, C=${C[$i]}, data_type=${data_type[0]}"
             done
         done
     done
