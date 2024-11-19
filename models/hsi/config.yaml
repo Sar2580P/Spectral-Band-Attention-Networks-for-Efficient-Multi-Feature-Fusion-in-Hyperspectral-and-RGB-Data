@@ -16,7 +16,7 @@ cosine_warm_restarts_decay_lr_scheduler_params:
   decay: 0.7
   eta_min: 1.0e-06
 data_dir: Data/hsi_masked_spa/Channel_168
-data_type: maskedSPA
+data_type: maskedBAM
 densenet_variant:
 - 18
 - 24

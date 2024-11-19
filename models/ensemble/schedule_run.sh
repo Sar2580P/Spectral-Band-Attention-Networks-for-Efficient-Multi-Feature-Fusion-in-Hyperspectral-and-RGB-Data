@@ -6,7 +6,7 @@ num_classes=(96)  # (12 24 37 55 75 96)
 preprocessing=('none')
 data_dir=('Data/hsi_masked_spa/Channel_25' 'Data/hsi_masked_spa/Channel_50' 'Data/hsi_masked_spa/Channel_75' 'Data/hsi_masked_spa/Channel_100' 'Data/hsi_masked_spa/Channel_125' 'Data/hsi_masked_spa/Channel_150' 'Data/hsi_masked_spa/Channel_168')
 C=(25 50 75 100 125 150 168)
-data_type=('maskedSPA')
+data_type=('maskedBAM')
 model_name=('resnet' 'densenet' 'google_net')
 
 hsi_yaml="models/hsi/config.yaml"

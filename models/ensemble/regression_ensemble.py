@@ -9,15 +9,43 @@ import joblib
 from processing.utils import read_yaml
 import glob
 
-def load_data(data_dir):
-    tr_preds = glob.glob(os.path.join(data_dir, 'rgb_*_train.npy'))
-    pattern = f"hsi_*_train_{hsi_config['data_type']}__{hsi_config['preprocessing']}__{hsi_config['C']}.npy"
-    tr_preds += glob.glob(os.path.join(data_dir, pattern))
+def load_data(data_dir, model_dict=None):
+    """
+    Load train and validation data based on the specified models for RGB and HSI.
+
+    Args:
+        data_dir (str): Directory containing the data files.
+        model_dict (dict or None): Dictionary with keys 'rgb' and 'hsi' and lists of model names as values.
+                                   If None, falls back to default behavior.
+
+    Returns:
+        tuple: train_data and val_data after joining base predictions.
+    """
+    if model_dict is None:
+        # Fallback to previous logic if model_dict is None
+        tr_preds = glob.glob(os.path.join(data_dir, 'rgb_*_train.npy'))
+        pattern = f"hsi_*_train_{hsi_config['data_type']}__{hsi_config['preprocessing']}__{hsi_config['C']}.npy"
+        tr_preds += glob.glob(os.path.join(data_dir, pattern))
+    else:
+        # New logic based on model_dict
+        tr_preds = []
+
+        # Process RGB models
+        for model_name in model_dict.get('rgb', []):
+            pattern = f"rgb_*{model_name}*_train.npy"
+            tr_preds += glob.glob(os.path.join(data_dir, pattern))
+
+        # Process HSI models
+        for model_name in model_dict.get('hsi', []):
+            pattern = f"hsi_*{model_name}*_train_{hsi_config['data_type']}__{hsi_config['preprocessing']}__{hsi_config['C']}.npy"
+            tr_preds += glob.glob(os.path.join(data_dir, pattern))
 
     val_preds = [file.replace('train', 'val') for file in tr_preds]
     train_data = join_base_preds(tr_preds)
     val_data = join_base_preds(val_preds)
+
     return train_data, val_data
+
 
 def join_base_preds(pred_files):
     X , Y = None, None
@@ -110,17 +138,16 @@ def save_model_results(model_results, pkl_file_path):
         pickle.dump(model_results, pkl_file)
 
 
-def main(data_dir, num_classes, save_file, json_file_path):
-    train_data, val_data = load_data(data_dir)
+def main(data_dir, num_classes, save_file, json_file_path, model_dict=None):
+
+    train_data, val_data = load_data(data_dir, model_dict)
 
     X_train, y_train = prepare_data(train_data, num_classes)
     X_val, y_val = prepare_data(val_data, num_classes)
 
-
-
     models = [
         # LogisticRegression(max_iter=5000, multi_class='multinomial'),
-        SVC(),  # Note: SVC is used for classification, while SVR is used for regression
+        SVC(C=0.5),  # Note: SVC is used for classification, while SVR is used for regression
         # xgb.XGBClassifier()  # Use XGBClassifier for classification tasks
     ]
 
@@ -149,8 +176,25 @@ if __name__ == "__main__":
     os.makedirs(SAVE_DIR, exist_ok=True)
     data_dir = os.path.join(SOURCE_DIR , f"fold_{hsi_config['fold']}")
 
-    prefix_name = f"RegressionEnsemble__{hsi_config['data_type']}__{hsi_config['preprocessing']}__{hsi_config['C']}"
+    model_dict = {
+        'rgb' : ['resnet'] ,   # google_net , 'densenet', 'resnet'
+        'hsi' : ['densenet']
+    }
+    rgb_code = {
+        "google_net" : "gnet",
+        "densenet" :"dnet121" ,
+        "resnet" : "rnet18"
+    }
+    rgb_prefix = "rgb--"
+    for model in model_dict['rgb']:
+        rgb_prefix += "_" + rgb_code[model]
+
+    hsi_prefix = "hsi--"
+    for model in model_dict['hsi']:
+        hsi_prefix += "_" + model
+
+    prefix_name = f"RegressionEnsemble__{rgb_prefix}__{hsi_prefix}__{hsi_config['data_type']}__{hsi_config['preprocessing']}__{hsi_config['C']}"
     prediction_save_path = f"{SAVE_DIR}/{prefix_name}__predictions.npy"  # File to save y_true, y_pred, and weights
     model_metadata_save_path = f"{SAVE_DIR}/{prefix_name}__model_performance.pkl"  # File to save weights and accuracy of each model
 
-    main(data_dir, hsi_config['num_classes'], prediction_save_path, model_metadata_save_path)
+    main(data_dir, hsi_config['num_classes'], prediction_save_path, model_metadata_save_path, model_dict=model_dict)
