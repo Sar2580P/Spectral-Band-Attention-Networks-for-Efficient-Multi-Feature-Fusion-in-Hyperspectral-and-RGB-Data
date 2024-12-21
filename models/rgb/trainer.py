@@ -32,8 +32,8 @@ tst_loader = DataLoader(tst_dataset, batch_size=config['BATCH_SIZE'], shuffle=Fa
 model_obj = get_model[config['model_name']](config)
 model = Classifier(model_obj)
 
-NAME = model_obj.model_name+f'__var-{config["num_classes"]}'+f'__fold-{config["fold"]}'
-RESULT_DIR = os.path.join(config['dir'], f"classes-{config['num_classes']}" , f"fold-{config['fold']}")
+NAME = model_obj.model_name+f'__var-{config["num_classes"]}'
+RESULT_DIR = os.path.join(config['dir'], f"classes-{config['num_classes']}")
 
 if not os.path.exists(RESULT_DIR):
   os.makedirs(RESULT_DIR)

@@ -47,9 +47,10 @@ class MobileNet():
 
 #___________________________________________________________________________________________________________________
 
-class RGB_Resnet():
+class RGB_Resnet(nn.Module):
   # https://pytorch.org/vision/main/models/generated/torchvision.models.resnet101.html
   def __init__(self, config ):
+    super(RGB_Resnet, self).__init__()
     self.config = config
     self.model_name = config['model_name']+'-'+str(config['resnet_variant'])
     self.model = self.get_model()
@@ -77,14 +78,14 @@ class RGB_Resnet():
 
   def forward(self, x):
     x = self.model(x)
-    # return self.head(x)
     return x
 #___________________________________________________________________________________________________________________
 
 
-class GoogleNet():
+class GoogleNet(nn.Module):
   # https://pytorch.org/vision/stable/models/generated/torchvision.models.efficientnet_v2_l.html#torchvision.models.efficientnet_v2_l
   def __init__(self, config):
+    super(GoogleNet, self).__init__()
     self.config = config
     self.model_name = config['model_name']
 
@@ -113,9 +114,10 @@ class GoogleNet():
     return x
 
 #___________________________________________________________________________________________________________________
-class DenseNetRGB():
+class DenseNetRGB(nn.Module):
   # https://pytorch.org/vision/stable/models/generated/torchvision.models.efficientnet_v2_l.html#torchvision.models.efficientnet_v2_l
   def __init__(self, config):
+    super(DenseNetRGB, self).__init__()
     self.config = config
     self.model_name = config['model_name']+'-'+str(config['densenet_variant'])
 

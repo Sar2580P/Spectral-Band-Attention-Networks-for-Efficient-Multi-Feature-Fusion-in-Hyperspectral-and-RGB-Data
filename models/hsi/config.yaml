@@ -1,45 +1,57 @@
 BATCH_SIZE: 64
 C: 168
+EarlyStopping:
+  min_delta: 0.0001
+  mode: min
+  monitor: total_val_loss
+  patience: 30
+  verbose: true
 H: 40
-MAX_EPOCHS: 500
+MAX_EPOCHS: 200
+ModelCheckpoint:
+  mode: min
+  monitor: total_val_loss
+  save_top_k: 1
+  verbose: true
 W: 24
 accumulate_grad_batches: 2
 activation_func: prelu
 ckpt_file_name: '{epoch}-{val_loss:.2f}-{val_accuracy:.2f}'
 compression_factor: 0.25
 cosine_annealing_lr_scheduler_params:
-  T_max: 160
+  T_max: 250
   eta_min: 1.0e-07
 cosine_warm_restarts_decay_lr_scheduler_params:
   T_0: 10
   T_mult: 2
   decay: 0.7
   eta_min: 1.0e-06
-data_dir: Data/hsi_masked_spa/Channel_168
+data_dir: Data/hsi_masked_bam/channels_168
 data_type: maskedBAM
 densenet_variant:
-- 18
 - 24
+- 18
 - 16
 - 10
 dir: results/hsi
 exponential_decay_lr_scheduler_params:
-  gamma: 0.993
-fold: 4
+  gamma: 0.985
 k: 24
 load_model: true
-lr: 4.0e-05
+lr: 3.5e-05
 modality: hsi
 model_name: densenet
 num_classes: 96
 num_workers: 8
 preprocessing: none
-scheduler_name: cosine_warm_restarts_decay_lr_scheduler
+scheduler_name: exponential_decay_lr_scheduler
 sparse_bam_config:
-  beta: 5.2e-07
+  apply_temperature_scaling: false
+  beta: 5.71e-05
   head_model_ckpt: results/hsi/classes-96/fold-4/ckpts/sparse_bam_densenet-12-18-24-6__maskedFull__none--epoch=151-val_loss=0.00-val_accuracy=0.85.ckpt
   head_model_name: densenet
+  loss_type: mean
   r: 2
-  sparsity_threshold: -0.04089
-  temperature: 0.45611
-weight_decay: 3.8e-08
+  sparsity_threshold: -0.2437
+  temperature: 0.7192
+weight_decay: 3.8e-07

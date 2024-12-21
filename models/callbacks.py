@@ -4,7 +4,7 @@ from  pytorch_lightning.callbacks.progress.rich_progress import RichProgressBarT
 from processing.utils import read_yaml
 from pytorch_lightning.callbacks import LearningRateMonitor
 
-config = read_yaml('models/rgb/config.yaml')
+config = read_yaml('models/hsi/config.yaml')
 
 es_config = config['EarlyStopping']
 early_stop_callback = EarlyStopping(

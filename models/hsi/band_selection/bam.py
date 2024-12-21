@@ -9,7 +9,7 @@ import random
 from tqdm import tqdm
 
 class BandAttentionBlock(nn.Module):
-    def __init__(self, in_channels, temperature=0.7, r=2, sparsity_threshold=0.07):
+    def __init__(self, in_channels, temperature=0.7, r=2, sparsity_threshold=0.07, apply_temperature_scaling=True):
         super(BandAttentionBlock, self).__init__()
 
         # Convolutional Layers
@@ -19,13 +19,14 @@ class BandAttentionBlock(nn.Module):
         self.attention_conv1d = self._build_attention_module(in_channels, r)
 
         # Learnable temperature scaling
-        self.temperature = nn.Parameter(torch.tensor(temperature))
+        self.temperature = nn.Parameter(torch.tensor(temperature), requires_grad=apply_temperature_scaling)
 
         # Learnable sparsity threshold
         self.learnable_threshold = nn.Parameter(torch.tensor(sparsity_threshold))
         self.sigmoid = nn.Sigmoid()
         self.scaled_attn_vector = None
         config = read_yaml('models/hsi/config.yaml')
+        self.apply_temperature_scaling = apply_temperature_scaling
         # plot_model(config = config , model = self.attention_conv1d)
 
     def _build_conv_block(self, in_channels):
@@ -61,7 +62,10 @@ class BandAttentionBlock(nn.Module):
         attn_vector = attn_vector.squeeze(3).permute(0, 2, 1)  # Shape: (B, 1, 32)
         # Apply Conv1D Attention Mechanism
         attn_vector = self.attention_conv1d(attn_vector)  # (B, reduction_ratio, 1)
-        self.scaled_attn_vector = attn_vector / self.temperature
+        if self.apply_temperature_scaling:
+            self.scaled_attn_vector = attn_vector / self.temperature
+        else :
+            self.scaled_attn_vector = attn_vector
 
         # Sparsity enforcement
         sparse_channel_weights = torch.where(
@@ -172,13 +176,15 @@ class BandAttentionIntegrated(nn.Module):
         super(BandAttentionIntegrated, self).__init__()
         self.config = config
         self.model = self.get_model()
-        self.model_name = f"sparse_bam_{self.head.model_name}"
-        self.layer_lr = [{'params' : self.bam.parameters(), 'lr' : self.config['lr']*0.6},
-                         {'params' : self.head.parameters() , 'lr' : self.config['lr']}]  #the head model is trained with 1/5th the learning rate of the BAM model
+        self.model_name = config['model_name']
+        self.layer_lr = [{'params' : self.bam.parameters(), 'lr' : self.config['lr']*0.5},
+                         {'params' : self.head.parameters() , 'lr' : self.config['lr']}]
+
         # plot_model(self.config , self.model)
     def get_model(self):
         self.bam = BandAttentionBlock(in_channels=self.config['C'] ,temperature= self.config['sparse_bam_config']['temperature'],
-                                      r = self.config['sparse_bam_config']['r'], sparsity_threshold=self.config['sparse_bam_config']['sparsity_threshold'])
+                                      r = self.config['sparse_bam_config']['r'], sparsity_threshold=self.config['sparse_bam_config']['sparsity_threshold'],
+                                      apply_temperature_scaling = self.config['sparse_bam_config']['apply_temperature_scaling'])
         # self.bam = BandMultiheadAttentionBlock(in_channels=self.config['C'] , r = self.config['sparse_bam_config']['r'],
         #                               num_heads = self.config['sparse_bam_config']['num_heads'],
         #                               temperature = self.config['sparse_bam_config']['temperature'])
@@ -189,22 +195,20 @@ class BandAttentionIntegrated(nn.Module):
             self.head = DenseNet(config=dup_config)
 
 
-        # self.load_head_ckpt()
+        self.load_head_ckpt()
 
         return nn.Sequential(self.bam, self.head)
 
     def load_head_ckpt(self):
         ckpt_file_path = self.config['sparse_bam_config']['head_model_ckpt']
-        checkpoint = torch.load(ckpt_file_path, weights_only=True)['state_dict']
-
-        weights = {k.replace("model_obj.model.", ""): v for k, v in checkpoint.items() if k.startswith("model_obj.model.")}
-
-
         try:
+            checkpoint = torch.load(ckpt_file_path, weights_only=True)['state_dict']
+
+            weights = {k.replace("model_obj.model.", ""): v for k, v in checkpoint.items() if k.startswith("model_obj.model.")}
             self.head.model.load_state_dict(weights)
-            print(f"Loaded weights from {ckpt_file_path}")
+            print(f"Successfull loaded weights from {ckpt_file_path}")
         except Exception as e:
-            print(f"Error: {e} , failed to load weights from {ckpt_file_path}")
+            print(f"Failed to load weights, initializing with random weights")
 
     def forward(self, x):
         return self.model(x)
@@ -245,7 +249,8 @@ def get_scaled_attention_vector(model, input_tensor):
     # Get the scaled attention vector from the bam module
     return model.bam.attn_vector_output
 
-def process_and_save_scaled_attention_vectors(model, image_dir, n=1000, save_path='models/hsi/band_selection/bam_scaled_attn.npy'):
+def process_and_save_scaled_attention_vectors(model, image_dir, n=1000,
+                                              save_path='models/hsi/band_selection/bam_scaled_attn.npy'):
     """
     Samples n images from the image directory, processes them through the model's BAM module to
     get the scaled attention vectors, and saves the resulting 2D matrix of size (n, C) to an .npy file.
@@ -360,25 +365,24 @@ def process_images_by_channel_count(source_dir, dest_dir, channel_ranking, incre
 
 import pickle
 if __name__ == '__main__':
-    # ckpt = "results/hsi/classes-96/fold-4/ckpts/sparse_bam_densenet-12-18-24-6__maskedFull__none--epoch=69-val_loss=0.00-val_accuracy=0.87.ckpt"
-    # state_dict = torch.load(ckpt, weights_only=True)['state_dict']
-    # weights = {k.replace("model_obj.model.", ""): v for k, v in state_dict.items() if k.startswith("model_obj.model.")}
-    # # print(weights.keys())
-    # config = read_yaml('models/hsi/config.yaml')
-    # input = torch.randn(32, config['C'], config['H'], config['W']).to('cuda')
-    # A = BandAttentionIntegrated(config).to('cuda')
-    # A.model.load_state_dict(weights)
+    ckpt = "results/hsi/classes-96/ckpts/sparse_bam_densenet_withoutTemp_LossMean__maskedPCALoading__none__168--epoch=186-val_loss=0.00-val_accuracy=0.85.ckpt"
+    suffix = "_withoutTemp_LossMean"
+    state_dict = torch.load(ckpt, weights_only=True)['state_dict']
+    weights = {k.replace("model_obj.model.", ""): v for k, v in state_dict.items() if k.startswith("model_obj.model.")}
+    # print(weights.keys())
+    config = read_yaml('models/hsi/config.yaml')
+    input = torch.randn(32, config['C'], config['H'], config['W']).to('cuda')
+    A = BandAttentionIntegrated(config).to('cuda')
+    A.model.load_state_dict(weights)
 
-    # process_and_save_scaled_attention_vectors(A, 'Data/hsi_masked/', n=2000)
+    process_and_save_scaled_attention_vectors(A, 'Data/hsi_masked/', n=2000,
+                                              save_path=f'models/hsi/band_selection/bam_scaled_attn{suffix}.npy')
+
+    ranked_channels, ranked_scores = rank_channels_by_attention_score(f'models/hsi/band_selection/bam_scaled_attn{suffix}.npy')
+    pickle.dump({'channels': ranked_channels, 'scores': ranked_scores}, open(f'models/hsi/band_selection/bam_ranked_channels{suffix}.pkl', 'wb'))
+    for channel, score in zip(ranked_channels, ranked_scores):
+        print(f"Channel {channel}: {score:.4f}")
 
 
-
-
-    ranked_channels, ranked_scores = rank_channels_by_attention_score('models/hsi/band_selection/bam_scaled_attn.npy')
-    pickle.dump({'channels': ranked_channels, 'scores': ranked_scores}, open('models/hsi/band_selection/bam_ranked_channels.pkl', 'wb'))
-    # for channel, score in zip(ranked_channels, ranked_scores):
-    #     print(f"Channel {channel}: {score:.4f}")
-
-
-    # process_images_by_channel_count('Data/hsi_masked', 'Data/hsi_masked_bam', ranked_channels, increment=25)
+    process_images_by_channel_count('Data/hsi_masked', f'Data/hsi_masked_bam{suffix}', ranked_channels, increment=25)
 

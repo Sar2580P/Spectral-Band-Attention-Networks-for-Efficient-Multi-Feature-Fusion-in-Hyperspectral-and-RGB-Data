@@ -78,7 +78,7 @@ def plot_lr_scheduler(optimizer , eta_max, T_0, T_mult, max_epochs, decay, filen
 
 
 class BandSparsityLoss(nn.Module):
-    def __init__(self, beta: float, total_epochs: int, initial_lambda: float = 1e-4):
+    def __init__(self, beta: float, total_epochs: int, initial_lambda: float = 1e-4, loss_type='l1'):
         """
         Initializes the auxiliary loss class.
 
@@ -91,6 +91,7 @@ class BandSparsityLoss(nn.Module):
         self.beta = beta
         self.total_epochs = total_epochs
         self.lambda_ = initial_lambda
+        self.loss_type = loss_type
 
     def update_lambda(self, current_epoch: int):
         t1 = current_epoch
@@ -114,11 +115,15 @@ class BandSparsityLoss(nn.Module):
       # Calculate the mean weights across the batch axis
       mean_weights = torch.mean(w_ij, dim=0)
 
-      # Calculate L1 norm of the mean weights
-      l1_norm = torch.sum(torch.abs(mean_weights))  # Use sum of absolute values for L1 norm
+
+      if self.loss_type == 'l1':
+        # Calculate L1 norm of the mean weights
+        band_sparsity_loss = torch.sum(torch.abs(mean_weights))  # Use sum of absolute values for L1 norm
+      elif self.loss_type == 'mean':
+        band_sparsity_loss = torch.mean(mean_weights)
 
       # Return the auxiliary loss scaled by lambda
-      return self.lambda_ * l1_norm
+      return self.lambda_ * band_sparsity_loss
 
 class Classifier(pl.LightningModule):
   def __init__(self, model_obj):
@@ -141,6 +146,7 @@ class Classifier(pl.LightningModule):
     if self.model_obj.model_name.startswith('sparse_bam'):
       self.aux_loss_fn = BandSparsityLoss(beta=self.config['sparse_bam_config']['beta'],
                                           total_epochs=self.config['MAX_EPOCHS'],
+                                          loss_type=self.config['sparse_bam_config']['loss_type']
                                           )
 
     self.y_hat = []
@@ -170,12 +176,15 @@ class Classifier(pl.LightningModule):
     self.tr_accuracy(y_hat, y)
     self.tr_kappa(y_hat, y)
     self.log("cross_entropy_train_loss", ce_loss,on_step = True ,on_epoch=True, prog_bar=True, logger=True)
+    self.log("total_train_loss", total_loss, on_step = True ,on_epoch=True, prog_bar=True, logger=True)
     self.log("train_kappa", self.tr_kappa, on_step=True , on_epoch=True, prog_bar=True, logger=True)
     self.log("train_accuracy", self.tr_accuracy, on_step = True, on_epoch=True,prog_bar=True, logger=True)
 
     return total_loss
 
   def validation_step(self, batch, batch_idx):
+    # bring model to same device as batch
+    # self.model_obj.model.to(batch[0].device)
     x, y = batch
     y_hat = self.model_obj.forward(x)
     ce_loss = self.criterion(y_hat, y.long())      # compute CE loss
@@ -194,6 +203,7 @@ class Classifier(pl.LightningModule):
     self.val_accuracy(y_hat, y)
     self.val_kappa(y_hat, y)
     self.log("cross_entropy_val_loss", ce_loss, on_epoch=True, prog_bar=True, logger=True)
+    self.log("total_val_loss", total_loss, on_epoch=True, prog_bar=True, logger=True)
     self.log("val_kappa", self.val_kappa,on_step = False, on_epoch=True, prog_bar=True, logger=True)
     self.log("val_accuracy", self.val_accuracy, on_step = False, on_epoch=True,prog_bar=True, logger=True)
     return total_loss
@@ -219,28 +229,15 @@ class Classifier(pl.LightningModule):
     self.tst_accuracy(y_hat, y)
     self.tst_kappa(y_hat, y)
     self.log("cross_entropy_test_loss", ce_loss,on_step = True,  on_epoch=True, prog_bar=True, logger=True)
+    self.log("total_test_loss", total_loss,on_step = True,  on_epoch=True, prog_bar=True, logger=True)
     self.log("test_kappa", self.tst_kappa,on_step = True,  on_epoch=True, prog_bar=True, logger=True)
     self.log("test_accuracy", self.tst_accuracy, on_step = True ,on_epoch=True,prog_bar=True, logger=True)
     return total_loss
-
-  # def on_test_epoch_end(self):
-  #   y_hat = torch.cat(self.y_hat, dim=0)
-  #   y_true = torch.cat(self.y_true, dim=0)
-
-  #   cm = self.conf_mat(y_hat, y_true).detach().cpu().numpy()
-
-  #   df = pd.DataFrame(cm , columns = [str(i) for i in range(self.config['num_classes'])])
-  #   df.to_csv(os.path.join(self.config['dir'], 'confusion_matrix.csv'))
-
 
   def configure_optimizers(self):
     optim =  torch.optim.Adam(self.layer_lr, lr = self.config['lr'], weight_decay = self.config['weight_decay'])   # https://pytorch.org/docs/stable/optim.html
     scheduler_params = self.config[f"{self.config['scheduler_name']}_params"]
 
-    # lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optim, patience=3, factor=0.7, threshold=0.005, cooldown =2,verbose=True)
-    # lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optim, T_max=160, eta_min=1e-6, verbose=True)
-
-    # lr_scheduler = torch.optim.lr_scheduler.ExponentialLR(optim,gamma = 0.9915 ,last_epoch=-1,   verbose=True)
     if self.config['scheduler_name'] == 'cosine_warm_restarts_decay_lr_scheduler':
       lr_scheduler = CosineAnnealingWarmRestartsDecay(optim, **scheduler_params)
 
@@ -288,7 +285,7 @@ class MyDataset(Dataset):
   def __msc_correction__(self, hsi_image):
 
     # Compute the
-    mean_spectrum = np.mean(hsi_image, axis=(0, 1))     # mean spectrum of the image , shape = (num_bands,)
+    mean_spectrum = np.mean(hsi_image, axis=(0, 1))
 
     # Compute the MSC correction factor for each band.
     msc_correction_factor = mean_spectrum / np.mean(mean_spectrum)

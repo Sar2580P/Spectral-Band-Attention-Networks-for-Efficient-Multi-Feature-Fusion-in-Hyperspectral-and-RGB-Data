@@ -24,7 +24,7 @@ def load_data(data_dir, model_dict=None):
     if model_dict is None:
         # Fallback to previous logic if model_dict is None
         tr_preds = glob.glob(os.path.join(data_dir, 'rgb_*_train.npy'))
-        pattern = f"hsi_*_train_{hsi_config['data_type']}__{hsi_config['preprocessing']}__{hsi_config['C']}.npy"
+        pattern = f"hsi_{hsi_config['model_name']}_train_{hsi_config['data_type']}__{hsi_config['preprocessing']}__{hsi_config['C']}.npy"
         tr_preds += glob.glob(os.path.join(data_dir, pattern))
     else:
         # New logic based on model_dict
@@ -41,10 +41,12 @@ def load_data(data_dir, model_dict=None):
             tr_preds += glob.glob(os.path.join(data_dir, pattern))
 
     val_preds = [file.replace('train', 'val') for file in tr_preds]
+    tst_preds = [file.replace('train', 'tst') for file in tr_preds]
     train_data = join_base_preds(tr_preds)
     val_data = join_base_preds(val_preds)
+    tst_data = join_base_preds(tst_preds)
 
-    return train_data, val_data
+    return train_data, val_data, tst_data
 
 
 def join_base_preds(pred_files):
@@ -129,8 +131,13 @@ def evaluate_ensemble(X_val, y_val, model):
     print(f"Validation Accuracy: {acc}")
     return y_val_pred, acc
 
-def save_results(y_true, y_pred, file_path):
-    np.save(file_path, {'y_true': y_true, 'y_pred': y_pred})
+def save_results(y_true, y_pred, y_test, y_test_pred,  file_path):
+    np.save(file_path, {
+        'y_true': y_true,
+        'y_pred': y_pred,
+        'y_test' : y_test,
+        'y_test_pred' : y_test_pred
+        })
 
 
 def save_model_results(model_results, pkl_file_path):
@@ -140,14 +147,15 @@ def save_model_results(model_results, pkl_file_path):
 
 def main(data_dir, num_classes, save_file, json_file_path, model_dict=None):
 
-    train_data, val_data = load_data(data_dir, model_dict)
+    train_data, val_data, tst_data = load_data(data_dir, model_dict)
 
     X_train, y_train = prepare_data(train_data, num_classes)
     X_val, y_val = prepare_data(val_data, num_classes)
+    X_test, y_test = prepare_data(tst_data, num_classes)
 
     models = [
         # LogisticRegression(max_iter=5000, multi_class='multinomial'),
-        SVC(C=0.5),  # Note: SVC is used for classification, while SVR is used for regression
+        SVC(C=0.1),  # Note: SVC is used for classification, while SVR is used for regression
         # xgb.XGBClassifier()  # Use XGBClassifier for classification tasks
     ]
 
@@ -155,9 +163,10 @@ def main(data_dir, num_classes, save_file, json_file_path, model_dict=None):
     best_model = joblib.load("SVC_model.pkl")
     print("Evaluating on validation data...")
     y_val_pred, val_acc = evaluate_ensemble(X_val, y_val, best_model)
+    y_test_pred, test_acc = evaluate_ensemble(X_test, y_test, best_model)
 
     print(f"Saving results to {save_file}...")
-    save_results(y_val, y_val_pred, save_file)
+    save_results(y_val, y_val_pred,y_test, y_test_pred, save_file)
 
     print(f"Saving model results to {json_file_path}...")
     save_model_results(model_results, json_file_path)
@@ -168,17 +177,14 @@ if __name__ == "__main__":
     SOURCE_DIR = f"results/ensemble/base_models/classes-{hsi_config['num_classes']}"
     assert os.path.exists(SOURCE_DIR), f"Source directory {SOURCE_DIR} does not exist"
 
-    BASE_DIR = f"results/ensemble/regression/classes-{hsi_config['num_classes']}"
-    if not os.path.exists(BASE_DIR):
-        os.makedirs(BASE_DIR)
-
-    SAVE_DIR = os.path.join(BASE_DIR, f"fold_{hsi_config['fold']}")
+    SAVE_DIR = f"results/ensemble/regression/classes-{hsi_config['num_classes']}"
     os.makedirs(SAVE_DIR, exist_ok=True)
-    data_dir = os.path.join(SOURCE_DIR , f"fold_{hsi_config['fold']}")
+
+    data_dir = SOURCE_DIR
 
     model_dict = {
-        'rgb' : ['resnet'] ,   # google_net , 'densenet', 'resnet'
-        'hsi' : ['densenet']
+        'rgb' : ['google_net' , 'densenet', 'resnet'] ,   # google_net , 'densenet', 'resnet'
+        'hsi' : ['densenet__withoutTemp_LossMean']
     }
     rgb_code = {
         "google_net" : "gnet",

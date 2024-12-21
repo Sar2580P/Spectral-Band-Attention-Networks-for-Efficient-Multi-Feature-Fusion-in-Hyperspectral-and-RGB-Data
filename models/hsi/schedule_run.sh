@@ -1,12 +1,13 @@
 #!/bin/bash
 
-# Define the range of folds and the list of num_classes
-folds=(0 1 2 3 4)
-num_classes=(96)  #(12 24 37 55 75 96)
+# Define the list of num_classes
+num_classes=(96)
 preprocessing=('none')
-data_dir=('Data/hsi_masked_pcaLoading/Channel_25' 'Data/hsi_masked_pcaLoading/Channel_50' 'Data/hsi_masked_pcaLoading/Channel_75' 'Data/hsi_masked_pcaLoading/Channel_100' 'Data/hsi_masked_pcaLoading/Channel_125' 'Data/hsi_masked_pcaLoading/Channel_150' 'Data/hsi_masked_pcaLoading/Channel_168')
-C=(25 50 75 100 125 150 168)
-data_type=('maskedPCALoading')  # , 'maskedBAM' 'pcaLoading', 'maskedSPA'
+data_dir=('Data/hsi_masked_bam/channels_50' 'Data/hsi_masked_bam/channels_75' 'Data/hsi_masked_bam/channels_100' 'Data/hsi_masked_bam/channels_125' 'Data/hsi_masked_bam/channels_150' 'Data/hsi_masked_bam/channels_168')  # For maskedBAM
+# data_dir=('Data/hsi_masked_bam_withoutTemp_LossMean/channels_25' 'Data/hsi_masked_bam_withoutTemp_LossMean/channels_50' 'Data/hsi_masked_bam_withoutTemp_LossMean/channels_75' 'Data/hsi_masked_bam_withoutTemp_LossMean/channels_100' 'Data/hsi_masked_bam_withoutTemp_LossMean/channels_125' 'Data/hsi_masked_bam_withoutTemp_LossMean/channels_150' 'Data/hsi_masked_bam_withoutTemp_LossMean/channels_168')
+C=(50 75 100 125 150 168)
+data_type=('maskedBAM')  # , 'maskedBAM' 'pcaLoading', 'maskedSPA'
+model_name='densenet'  # Model name to be updated in the YAML file
 
 yaml_file="models/hsi/config.yaml"  # Path to your YAML file
 
@@ -20,39 +21,41 @@ with open('$yaml_file', 'r') as file:
     config = yaml.safe_load(file)
 
 # Update values
-config['fold'] = $1
-config['num_classes'] = $2
-config['preprocessing'] = '$3'
-config['data_dir'] = '$4'
-config['C'] = $5
-config['data_type'] = '$6'
+config['num_classes'] = $1
+config['preprocessing'] = '$2'
+config['data_dir'] = '$3'
+config['C'] = $4
+config['data_type'] = '$5'
+config['model_name'] = '$6'  # Update model_name here
 
 # Save updated YAML file
 with open('$yaml_file', 'w') as file:
     yaml.safe_dump(config, file)
-    " $1 $2 $3 $4 $5 $6
+    " $1 $2 $3 $4 $5 "$6"
 }
 
 runner_file="models/hsi/trainer.py"  # Path to your Python script
 
-# Iterate over each combination of fold and num_classes
-for fold in "${folds[@]}"; do
-    for num_class in "${num_classes[@]}"; do
-        for preprocessing in "${preprocessing[@]}"; do
-            for i in "${!data_dir[@]}"; do
-                echo "Updating YAML and running $runner_file with fold=$fold, num_classes=$num_class, data_dir=${data_dir[$i]}, C=${C[$i]}, data_type=${data_type[0]}"
+# Iterate over each combination of num_classes, preprocessing, and zipped data_dir, C
+for num_class in "${num_classes[@]}"; do
+    for preprocessing in "${preprocessing[@]}"; do
+        for idx in "${!data_dir[@]}"; do
+            data="${data_dir[$idx]}"
+            c_value="${C[$idx]}"
+            for dtype in "${data_type[@]}"; do
+                echo "Updating YAML and running $runner_file with num_classes=$num_class, preprocessing=$preprocessing, data_dir=$data, C=$c_value, data_type=$dtype, model_name=$model_name"
 
-                # Update the YAML file with current parameters
-                update_yaml $fold $num_class "$preprocessing" "${data_dir[$i]}" "${C[$i]}" "${data_type[0]}"
+                # Update the YAML file with current parameters, including model_name
+                update_yaml $num_class "$preprocessing" "$data" "$c_value" "$dtype" "$model_name"
 
                 # Run the Python script and wait for it to complete
                 python $runner_file
                 if [ $? -ne 0 ]; then
-                    echo "Error occurred while running the trainer with fold=$fold, num_classes=$num_class, data_dir=${data_dir[$i]}, C=${C[$i]}, data_type=${data_type[0]}"
+                    echo "Error occurred while running the trainer with num_classes=$num_class, preprocessing=$preprocessing, data_dir=$data, C=$c_value, data_type=$dtype, model_name=$model_name"
                     exit 1
                 fi
 
-                echo "Completed fold=$fold, num_classes=$num_class, data_dir=${data_dir[$i]}, C=${C[$i]}, data_type=${data_type[0]}"
+                echo "Completed num_classes=$num_class, preprocessing=$preprocessing, data_dir=$data, C=$c_value, data_type=$dtype, model_name=$model_name"
             done
         done
     done

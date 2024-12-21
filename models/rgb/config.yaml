@@ -1,13 +1,13 @@
 BATCH_SIZE: 128
 C: 3
 EarlyStopping:
-  min_delta: 0.0002
+  min_delta: 0.0005
   mode: min
   monitor: cross_entropy_val_loss
   patience: 10
   verbose: true
 H: 247
-MAX_EPOCHS: 100
+MAX_EPOCHS: 75
 ModelCheckpoint:
   mode: min
   monitor: cross_entropy_val_loss
@@ -29,10 +29,9 @@ densenet_variant: 121
 dir: results/rgb
 exponential_decay_lr_scheduler_params:
   gamma: 0.995
-fold: 0
-lr: 7.0e-06
+lr: 8.0e-05
 modality: rgb
-model_name: 'resnet'
+model_name: google_net
 num_classes: 96
 num_workers: 8
 resnet_variant: 34

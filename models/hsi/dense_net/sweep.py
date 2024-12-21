@@ -13,7 +13,7 @@ from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 import torch
 
 sweep_config =read_yaml('models/hsi/dense_net/sweep_config.yaml')
-es_config = read_yaml('models/rgb/config.yaml')['EarlyStopping']
+es_config = read_yaml('models/hsi/config.yaml')['EarlyStopping']
 # Initialize the sweep
 sweep_id = wandb.sweep(sweep_config, project='hsi_densenet_project')
 
@@ -44,8 +44,8 @@ def train(config=None):
         val_loader = DataLoader(val_dataset, batch_size=config['BATCH_SIZE'], shuffle=False, num_workers=config['num_workers'])
         tst_loader = DataLoader(tst_dataset, batch_size=config['BATCH_SIZE'], shuffle=False, num_workers=config['num_workers'])
 
-        NAME = model_obj.model_name + f'__var-{config["num_classes"]}' + f'__fold-{config["fold"]}'
-        RESULT_DIR = os.path.join(config['dir'], f"classes-{config['num_classes']}", f"fold-{config['fold']}")
+        NAME = model_obj.model_name + f'__var-{config["num_classes"]}'
+        RESULT_DIR = os.path.join(config['dir'], f"classes-{config['num_classes']}")
 
         if not os.path.exists(RESULT_DIR):
             os.makedirs(RESULT_DIR)
