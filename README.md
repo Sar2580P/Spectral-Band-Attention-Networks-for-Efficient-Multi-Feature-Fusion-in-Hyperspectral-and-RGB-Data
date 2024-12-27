@@ -6,7 +6,7 @@ This project presents a **dual-branch network** integrating hyperspectral imagin
 
 <div align="center">
   <figure>
-    <img src="pics/seed_collection.png" alt="Dataset overview (RGB modality)" style="width:100%;max-width:600px;">
+    <img src="pics/Copy of seed sample journal 2.drawio (5)-1.png" alt="Dataset overview (RGB modality)" style="width:100%;max-width:600px;">
     <figcaption>Figure 1: Dataset overview</figcaption>
   </figure>
 </div>
@@ -23,7 +23,7 @@ This project presents a **dual-branch network** integrating hyperspectral imagin
 
 <div align="center">
   <figure>
-    <img src="pics/architecture_pipeline.png" alt="Model Architecture Setup" style="width:100%;max-width:600px;">
+    <img src="pics/block_diagram_RGB_HSI.drawio (2) (1)-1.png" alt="Model Architecture Setup" style="width:100%;max-width:600px;">
     <figcaption>Figure 2: Model Architecture Setup</figcaption>
   </figure>
 </div>
@@ -39,7 +39,7 @@ This project presents a **dual-branch network** integrating hyperspectral imagin
 
 <div align="center">
   <figure>
-    <img src="pics/band_weight_distribution.png" alt="Band Selection Weights (top 25)" style="width:100%;max-width:600px;">
+    <img src="pics/[V2]RGB-HSI-wavelengths.drawio (2) (1)-1.png" alt="Band Selection Weights (top 25)" style="width:100%;max-width:600px;">
     <figcaption>Figure 3: Band Selection Weights (top 25)</figcaption>
   </figure>
 </div>
@@ -63,7 +63,7 @@ The figure illustrates the **Spectral Band Priority Attention Block (SBPAB)** in
 
 <div align="center">
   <figure>
-    <img src="pics/hsi_SBAN_training.png" alt="End-to-End SBAN training" style="width:100%;max-width:600px;">
+    <img src="pics/band_attention.drawio (6) (1)-1.png" alt="End-to-End SBAN training" style="width:100%;max-width:600px;">
     <figcaption>Figure 4: SBPAB workflow with customized DenseNet for hyperspectral feature extraction and classification</figcaption>
   </figure>
 </div>
@@ -78,7 +78,7 @@ The performance of the dual-branch network was systematically compared by:
 
 <div align="center">
   <figure>
-    <img src="pics/num-OF_bands_diagram.png" alt="Performance with varying bands" style="width:100%;max-width:600px;">
+    <img src="pics/[v2]RGB-HSI_plots.drawio (2) (1).png-1.png" alt="Performance with varying bands" style="width:100%;max-width:600px;">
     <figcaption>Figure 5: Performance with varying bands</figcaption>
   </figure>
 </div>
