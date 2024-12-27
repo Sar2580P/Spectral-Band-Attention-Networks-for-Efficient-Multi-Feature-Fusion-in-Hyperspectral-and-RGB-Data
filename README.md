@@ -78,7 +78,7 @@ The performance of the dual-branch network was systematically compared by:
 
 <div align="center">
   <figure>
-    <img src="pics/[v2]RGB-HSI_plots.drawio (2) (1).png-1.png" alt="Performance with varying bands" style="width:100%;max-width:600px;">
+    <img src="pics/[v2]RGB-HSI_plots.drawio (2) (1).png" alt="Performance with varying bands" style="width:100%;max-width:600px;">
     <figcaption>Figure 5: Performance with varying bands</figcaption>
   </figure>
 </div>
