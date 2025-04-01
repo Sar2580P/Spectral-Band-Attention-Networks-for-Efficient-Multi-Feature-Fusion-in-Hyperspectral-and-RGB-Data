@@ -189,7 +189,7 @@ if __name__ == "__main__":
     rgb_code = {
         "google_net" : "gnet",
         "densenet" :"dnet121" ,
-        "resnet" : "rnet18"
+        "resnet" : "rnet34"
     }
     rgb_prefix = "rgb--"
     for model in model_dict['rgb']:

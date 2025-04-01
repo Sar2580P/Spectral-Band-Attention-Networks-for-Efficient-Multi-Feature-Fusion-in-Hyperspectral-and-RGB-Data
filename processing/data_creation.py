@@ -33,15 +33,15 @@ def create_splits(final_df, variety_count):
     train_df, test_combined_df = train_test_split(df, test_size=0.4, stratify=df['stratify_col(class_label+plate_count)'], random_state=7)
 
     # Split the test_combined_df into val, test1, test2
-    val_df, test1_df = train_test_split(test_combined_df, test_size=0.7, stratify=test_combined_df['stratify_col(class_label+plate_count)'], random_state=7)
-    test2_df, test1_df = train_test_split(test1_df, test_size=0.5, stratify=test1_df['stratify_col(class_label+plate_count)'], random_state=7)
+    val_df, test1_df = train_test_split(test_combined_df, test_size=0.5, stratify=test_combined_df['stratify_col(class_label+plate_count)'], random_state=7)
+    # test2_df, test1_df = train_test_split(test1_df, test_size=0.5, stratify=test1_df['stratify_col(class_label+plate_count)'], random_state=7)
 
     # Create directories for each split
     if not os.path.exists(BASE_PATH):
         os.mkdir(BASE_PATH)
 
     # Save the splits
-    for split, split_df in zip(['train', 'val', 'test1', 'test2'], [train_df, val_df, test1_df, test2_df]):
+    for split, split_df in zip(['train', 'val', 'test1'], [train_df, val_df, test1_df]):
         split_df.to_csv(os.path.join(BASE_PATH, f'df_{split}.csv'), index=False)
         print(f'{split}_split created')
 
