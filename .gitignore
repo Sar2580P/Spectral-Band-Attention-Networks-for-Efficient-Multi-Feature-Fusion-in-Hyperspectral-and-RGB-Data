@@ -12,3 +12,4 @@ results
 wandb
 densenet-[12,18,24, 6]__var-96__fold-4
 results__
+sarvagya-rgb_hsi

@@ -10,7 +10,7 @@ data_dir_maskedBAM=('Data/hsi_masked_bam/channels_25' 'Data/hsi_masked_bam/chann
 data_dir_pcaLoading=('Data/hsi_masked_pcaLoading/Channel_25' 'Data/hsi_masked_pcaLoading/Channel_50' 'Data/hsi_masked_pcaLoading/Channel_75' 'Data/hsi_masked_pcaLoading/Channel_100' 'Data/hsi_masked_pcaLoading/Channel_125' 'Data/hsi_masked_pcaLoading/Channel_150' 'Data/hsi_masked_pcaLoading/Channel_168')  # For pcaLoading
 data_dir_maskedSPA=('Data/hsi_masked_spa/Channel_25' 'Data/hsi_masked_spa/Channel_50' 'Data/hsi_masked_spa/Channel_75' 'Data/hsi_masked_spa/Channel_100' 'Data/hsi_masked_spa/Channel_125' 'Data/hsi_masked_spa/Channel_150' 'Data/hsi_masked_spa/Channel_168')  # For maskedSPA
 model_name=('densenet')  # Model name
-data_type=('maskedBAM')     #('maskedPCALoading' 'maskedSPA')
+data_type=('maskedPCALoading')     #('maskedPCALoading' 'maskedSPA' 'maskedBAM')
 
 hsi_yaml="models/hsi/config.yaml"
 # runner_file="models/ensemble/base.py"

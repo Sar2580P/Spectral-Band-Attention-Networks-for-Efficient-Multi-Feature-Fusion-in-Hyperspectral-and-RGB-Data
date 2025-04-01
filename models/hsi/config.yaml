@@ -26,8 +26,8 @@ cosine_warm_restarts_decay_lr_scheduler_params:
   T_mult: 2
   decay: 0.7
   eta_min: 1.0e-06
-data_dir: Data/hsi_masked_bam/channels_168
-data_type: maskedBAM
+data_dir: Data/hsi_masked_pcaLoading/Channel_168
+data_type: maskedPCALoading
 densenet_variant:
 - 24
 - 18

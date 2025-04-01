@@ -184,7 +184,7 @@ def get_base_models_predictions(rgb_models: List[str], hsi_models : List[str], n
 
 
 if __name__=="__main__":
-    get_base_models_predictions([] , ['densenet'], 96)  # 'resnet', 'densenet', 'google_net'
+    get_base_models_predictions(['resnet', 'densenet'] , ['densenet'], 96)  # 'resnet', 'densenet', 'google_net'
     print("Done")
 
     # path = 'results/ensemble/base_models/classes-96/fold_0/rgb_densenet_val.npy'

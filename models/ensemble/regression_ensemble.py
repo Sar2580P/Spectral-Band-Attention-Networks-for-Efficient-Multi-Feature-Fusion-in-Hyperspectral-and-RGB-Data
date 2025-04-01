@@ -183,8 +183,8 @@ if __name__ == "__main__":
     data_dir = SOURCE_DIR
 
     model_dict = {
-        'rgb' : ['google_net' , 'densenet', 'resnet'] ,   # google_net , 'densenet', 'resnet'
-        'hsi' : ['densenet__withoutTemp_LossMean']
+        'rgb' : ['google_net', 'densenet'] ,   # google_net , 'densenet', 'resnet'
+        'hsi' : ['densenet']
     }
     rgb_code = {
         "google_net" : "gnet",
