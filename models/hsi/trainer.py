@@ -1,11 +1,11 @@
 from models.train_eval import Classifier
-from torch.utils.data import DataLoader
 from models.model_architectures import DenseNet
-from models.callbacks import early_stop_callback, checkpoint_callback, rich_progress_bar, rich_model_summary, lr_monitor
+from models.callbacks import (early_stop_callback, checkpoint_callback, 
+                              rich_progress_bar, rich_model_summary, lr_monitor)
 from processing.utils import read_yaml
 from pytorch_lightning import Trainer
 from pytorch_lightning.loggers import WandbLogger, CSVLogger
-from data_loading import tr_dataset, val_dataset, tst_dataset
+from data_loading import get_hsi_loaders
 import pickle
 import torch
 import os
@@ -33,10 +33,7 @@ if config['load_model'] :
 else:
   model = Classifier(model_obj)
 
-tr_loader = DataLoader(tr_dataset, batch_size=config['BATCH_SIZE'], shuffle=True, num_workers=config['num_workers'])
-val_loader = DataLoader(val_dataset, batch_size=config['BATCH_SIZE'], shuffle=False, num_workers=config['num_workers'])
-tst_loader = DataLoader(tst_dataset, batch_size=config['BATCH_SIZE'], shuffle=False, num_workers=config['num_workers'])
-
+tr_loader, val_loader, tst_loader = get_hsi_loaders(config['data_config'])
 #___________________________________________________________________________________________________________________
 
 NAME = model_obj.model_name+f'__var-{config["num_classes"]}'
