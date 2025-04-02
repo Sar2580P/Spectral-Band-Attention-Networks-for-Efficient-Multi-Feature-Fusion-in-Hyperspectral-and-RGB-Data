@@ -71,3 +71,4 @@ class Model3(torch.nn.Module):
         return np.mean([self._attention_block_1.get_heatmaps(input_size).squeeze(),
                         self._attention_block_2.get_heatmaps(input_size).squeeze(),
                         self._attention_block_3.get_heatmaps(input_size).squeeze()], axis=0).squeeze()
+        

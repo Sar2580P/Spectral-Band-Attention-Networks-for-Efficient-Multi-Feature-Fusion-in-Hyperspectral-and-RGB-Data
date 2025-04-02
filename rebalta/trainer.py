@@ -79,6 +79,12 @@ if __name__ == "__main__":
     import pickle
     from pytorch_lightning import Trainer
     from pytorch_lightning.loggers import WandbLogger, CSVLogger
+    from omegaconf import OmegaConf
+
+    def read_yaml(file_path):
+      conf = OmegaConf.load(file_path)
+      config = OmegaConf.create(OmegaConf.to_yaml(conf, resolve=True))
+      return config
     
     config = read_yaml('rebalta/config.yaml')
 
@@ -120,6 +126,7 @@ if __name__ == "__main__":
         with open(os.path.join(RESULT_DIR, 'evaluations', f"{file_name}__predictions.pkl"), 'wb') as f:
             dict_ = {'y_hat': model.y_hat, 'y_true': model.y_true , 'training_config' : config}
             pickle.dump(dict_, f)
-
-    else:
-        print("Model already trained, with file_name: ", file_name)
+        if model_obj.uses_attention:
+          heatmaps_per_class = model.get_heatmaps(input_size=config['model_config']['input_dimension'])
+          pickle.dump(heatmaps_per_class,
+                      open(os.path.join(RESULT_DIR + f"{NAME}_C={config['C']}_attention_bands.pkl"), "wb"))
