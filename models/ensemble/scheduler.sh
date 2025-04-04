@@ -1,69 +1,63 @@
 #!/bin/bash
 
-num_classes=(96)  # (12 24 37 55 75 96)
+# Define the list of num_classes
+num_classes=(96)
 preprocessing=('none')
-C=(25 50 75 100 125 150 168)
+C=(25 50 75 100 125 150)
+data_type=('TripleAttnDataset')  # , 'maskedBAM' 'pcaLoading', 'maskedSPA'
+model_name='densenet'  # Model name to be updated in the YAML file
 
-# Data directories for each data type
-data_dir_maskedBAM=('Data/hsi_masked_bam/channels_25' 'Data/hsi_masked_bam/channels_50' 'Data/hsi_masked_bam/channels_75' 'Data/hsi_masked_bam/channels_100' 'Data/hsi_masked_bam/channels_125' 'Data/hsi_masked_bam/channels_150' 'Data/hsi_masked_bam/channels_168')  # For maskedBAM
-# data_dir_maskedBAM=('Data/hsi_masked_bam_withoutTemp_LossMean/channels_25' 'Data/hsi_masked_bam_withoutTemp_LossMean/channels_50' 'Data/hsi_masked_bam_withoutTemp_LossMean/channels_75' 'Data/hsi_masked_bam_withoutTemp_LossMean/channels_100' 'Data/hsi_masked_bam_withoutTemp_LossMean/channels_125' 'Data/hsi_masked_bam_withoutTemp_LossMean/channels_150' 'Data/hsi_masked_bam_withoutTemp_LossMean/channels_168')  # For maskedBAM
-data_dir_pcaLoading=('Data/hsi_masked_pcaLoading/Channel_25' 'Data/hsi_masked_pcaLoading/Channel_50' 'Data/hsi_masked_pcaLoading/Channel_75' 'Data/hsi_masked_pcaLoading/Channel_100' 'Data/hsi_masked_pcaLoading/Channel_125' 'Data/hsi_masked_pcaLoading/Channel_150' 'Data/hsi_masked_pcaLoading/Channel_168')  # For pcaLoading
-data_dir_maskedSPA=('Data/hsi_masked_spa/Channel_25' 'Data/hsi_masked_spa/Channel_50' 'Data/hsi_masked_spa/Channel_75' 'Data/hsi_masked_spa/Channel_100' 'Data/hsi_masked_spa/Channel_125' 'Data/hsi_masked_spa/Channel_150' 'Data/hsi_masked_spa/Channel_168')  # For maskedSPA
-model_name=('densenet')  # Model name
-data_type=('maskedPCALoading')     #('maskedPCALoading' 'maskedSPA' 'maskedBAM')
+yaml_file="models/hsi/config.yaml"  # Path to your YAML file
 
-hsi_yaml="models/hsi/config.yaml"
-# runner_file="models/ensemble/base.py"
-runner_file="models/ensemble/regression_ensemble.py"
-
-
-# Function to update the HSI YAML file
-update_hsi_yaml() {
+# Function to update only specified parameters in the YAML file
+update_yaml() {
     python -c "
 import yaml
-with open('$hsi_yaml', 'r') as file:
+
+# Load YAML file
+with open('$yaml_file', 'r') as file:
     config = yaml.safe_load(file)
-config['num_classes'] = $1
-config['preprocessing'] = '$2'
-config['data_dir'] = '$3'
-config['C'] = $4
-config['data_type'] = '$5'
-config['model_name'] = '$6'  # Add the model name
-with open('$hsi_yaml', 'w') as file:
-    yaml.safe_dump(config, file)
-    " $1 "$2" "$3" $4 "$5" "$6"
+
+# Ensure config is not None
+if config is None:
+    config = {}
+
+# Update only specified parameters
+config.update({
+    'num_classes': int($1),
+    'preprocessing': '$2',
+    'C': int($3),
+    'data_type': '$4',
+    'model_name': '$5'
+})
+
+# Save updated YAML file
+with open('$yaml_file', 'w') as file:
+    yaml.safe_dump(config, file, default_flow_style=False)
+" $1 "$2" $3 "$4" "$5"
 }
 
-# Iterate over each combination of parameters for HSI configuration
+runner_file="models/ensemble/regression_ensemble.py"  # Path to your Python script
+
+# Iterate over each combination of num_classes, preprocessing, and C
 for num_class in "${num_classes[@]}"; do
     for preprocessing in "${preprocessing[@]}"; do
-        for data_type_idx in "${!data_type[@]}"; do
-            # Get the corresponding data_dir for this data_type
-            if [ "${data_type[$data_type_idx]}" == "maskedBAM" ]; then
-                data_dirs=("${data_dir_maskedBAM[@]}")
-            elif [ "${data_type[$data_type_idx]}" == "maskedPCALoading" ]; then
-                data_dirs=("${data_dir_pcaLoading[@]}")
-            elif [ "${data_type[$data_type_idx]}" == "maskedSPA" ]; then
-                data_dirs=("${data_dir_maskedSPA[@]}")
-            fi
+        for idx in "${!C[@]}"; do
+            c_value="${C[$idx]}"
+            for dtype in "${data_type[@]}"; do
+                echo "Updating YAML and running $runner_file with num_classes=$num_class, preprocessing=$preprocessing, C=$c_value, data_type=$dtype, model_name=$model_name"
 
-            # Zipping data_dir and C together
-            for idx in "${!data_dirs[@]}"; do
-                data_dir_value="${data_dirs[$idx]}"
-                c_value="${C[$idx]}"
+                # Update the YAML file with current parameters
+                update_yaml $num_class "$preprocessing" "$c_value" "$dtype" "$model_name"
 
-                echo "Updating HSI YAML and running $runner_file with num_classes=$num_class, data_dir=$data_dir_value, C=$c_value, data_type=${data_type[$data_type_idx]}, model_name=$model_name"
-
-                # Update the HSI YAML file with current parameters
-                update_hsi_yaml $num_class "$preprocessing" "$data_dir_value" "$c_value" "${data_type[$data_type_idx]}" "$model_name"
-
-                # Run the Python script and check for errors
+                # Run the Python script and wait for it to complete
                 python $runner_file
                 if [ $? -ne 0 ]; then
-                    echo "Error occurred while running the HSI trainer with num_classes=$num_class, data_dir=$data_dir_value, C=$c_value, data_type=${data_type[$data_type_idx]}, model_name=$model_name"
+                    echo "Error occurred while running the trainer with num_classes=$num_class, preprocessing=$preprocessing, C=$c_value, data_type=$dtype, model_name=$model_name"
                     exit 1
                 fi
-                echo "Completed HSI num_classes=$num_class, data_dir=$data_dir_value, C=$c_value, data_type=${data_type[$data_type_idx]}, model_name=$model_name"
+
+                echo "Completed num_classes=$num_class, preprocessing=$preprocessing, C=$c_value, data_type=$dtype, model_name=$model_name"
             done
         done
     done

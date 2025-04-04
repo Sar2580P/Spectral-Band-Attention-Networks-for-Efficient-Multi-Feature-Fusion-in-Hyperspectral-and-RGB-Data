@@ -6,7 +6,14 @@ import pickle
 from sklearn.metrics import accuracy_score
 import os
 import joblib
-from processing.utils import read_yaml
+from omegaconf import OmegaConf
+import os
+
+
+def read_yaml(file_path):
+    conf = OmegaConf.load(file_path)
+    config = OmegaConf.create(OmegaConf.to_yaml(conf, resolve=True))
+    return config
 import glob
 
 def load_data(data_dir, model_dict=None):

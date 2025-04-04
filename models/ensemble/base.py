@@ -1,7 +1,6 @@
 import os
 import torch
 import torch.nn as nn
-from processing.utils import read_yaml
 from models.train_eval import Classifier
 from torch.utils.data import DataLoader
 from models.model_architectures import RGB_Resnet , DenseNetRGB , GoogleNet, DenseNet
@@ -12,6 +11,16 @@ from tqdm import tqdm
 from models.train_eval import MyDataset
 from models.transforms import val_hsi_transforms, val_rgb_transforms
 import glob
+
+from omegaconf import OmegaConf
+import os
+
+
+def read_yaml(file_path):
+    conf = OmegaConf.load(file_path)
+    config = OmegaConf.create(OmegaConf.to_yaml(conf, resolve=True))
+    return config
+
 hsi_config = read_yaml('models/hsi/config.yaml')
 rgb_config = read_yaml('models/rgb/config.yaml')
 
@@ -184,7 +193,7 @@ def get_base_models_predictions(rgb_models: List[str], hsi_models : List[str], n
 
 
 if __name__=="__main__":
-    get_base_models_predictions(['resnet', 'densenet'] , ['densenet'], 96)  # 'resnet', 'densenet', 'google_net'
+    get_base_models_predictions([] , ['densenet'], 96)  # 'resnet', 'densenet', 'google_net'
     print("Done")
 
     # path = 'results/ensemble/base_models/classes-96/fold_0/rgb_densenet_val.npy'

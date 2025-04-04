@@ -228,7 +228,7 @@ def plot_masks_with_thresholds(dir_path, save_dir, n=3, thresholds=np.arange(0.0
             mask = (channel_data > threshold).astype(np.float32)
             ax = axes[img_idx * num_cols + thresh_idx + 1]  # +1 for the threshold column
             ax.imshow(mask, cmap='gray', vmin=0, vmax=1)
-            ax.set_title(f'Threshold {threshold:.2f}', fontweight='bold', fontsize=16)
+            ax.set_title(f'Threshold {(threshold+0.04):.2f}', fontweight='bold', fontsize=16)
             ax.axis('off')
 
     # Hide any unused subplots (in case num_images * num_cols < total number of axes)
@@ -238,7 +238,7 @@ def plot_masks_with_thresholds(dir_path, save_dir, n=3, thresholds=np.arange(0.0
     plt.tight_layout(rect=[0, 0, 1, 0.96])  # Adjust layout to fit title
 
     # Save the plot
-    output_file = os.path.join(save_dir, 'masks_with_thresholds.png')
+    output_file = os.path.join(save_dir, 'masks_with_thresholds.pdf')
     plt.savefig(output_file)
     plt.close(fig)  # Close the figure to free up memory
 
@@ -392,7 +392,7 @@ if __name__ == '__main__':
     # Example usage
     # plot_hyperspectral_histograms('Data/hsi_masked',save_dir='pics' ,  n=5)
 
-    # plot_masks_with_thresholds(dir_path='sarvagya-rgb_hsi/Data/hsi', save_dir='pics', n=3, thresholds=np.arange(0.11, 0.20, 0.02))
+    plot_masks_with_thresholds(dir_path='Data/hsi', save_dir='pics', n=3, thresholds=np.arange(0.09, 0.16, 0.02))
     # create_hsi_masks(input_dir='Data/hsi', output_dir='Data/hsi_seed_masks', threshold_value=0.12 ,
     #                  channel_indices=[30, 35 , 40 , 50 , 60, 70 ,80] ,erosion_size=5, dilation_size=4)
 
