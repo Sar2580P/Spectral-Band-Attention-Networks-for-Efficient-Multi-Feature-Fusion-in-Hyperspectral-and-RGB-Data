@@ -1,10 +1,10 @@
 from rebalta.train_attention import load_model
 from processing.utils import read_yaml
-import torch 
+import torch
 import torchmetrics
+import pytorch_lightning as pl
 
-
-class BandSelection_TrainLoop:
+class BandSelection_TrainLoop(pl.LightningModule):
   def __init__(self, model_obj, config):
     super().__init__()
     self.model_obj = model_obj
@@ -73,8 +73,8 @@ class BandSelection_TrainLoop:
 
 if __name__ == "__main__":
     from models.hsi.data_loading import get_hsi_loaders
-    import os 
-    from models.callbacks import (early_stop_callback, checkpoint_callback, 
+    import os
+    from models.callbacks import (early_stop_callback, checkpoint_callback,
                               rich_progress_bar, rich_model_summary, lr_monitor)
     import pickle
     from pytorch_lightning import Trainer
@@ -85,17 +85,17 @@ if __name__ == "__main__":
       conf = OmegaConf.load(file_path)
       config = OmegaConf.create(OmegaConf.to_yaml(conf, resolve=True))
       return config
-    
+
     config = read_yaml('rebalta/config.yaml')
 
     try:
-        model_obj = load_model(config['model_config'])
+        model_obj = load_model(**config['model_config'])
     except Exception as e:
         print(f"Error loading model: {e}")
         raise ValueError("Model loading failed. Please check the model configuration.")
     model = BandSelection_TrainLoop(model_obj, config)
     tr_loader, val_loader, tst_loader = get_hsi_loaders(config['data_config'])
-    
+
     #__________________________________________________________________________________________________________
     NAME = "rebalta_hsi_band_selection"
     RESULT_DIR = os.path.join(config['dir'], f"classes-{config['num_classes']}")
@@ -107,7 +107,7 @@ if __name__ == "__main__":
     checkpoint_callback.dirpath = os.path.join(RESULT_DIR, 'ckpts')
     checkpoint_callback.filename = file_name +'--'+ config['ckpt_file_name']
     #__________________________________________________________________________________________________________
-    
+
     run_name = f"lr_{config['lr']} *** bs{config['BATCH_SIZE']} *** decay_{config['weight_decay']}"
     wandb_logger = WandbLogger(project= NAME, name = run_name)
     csv_logger = CSVLogger(RESULT_DIR+'/logs/'+ file_name)

@@ -1,8 +1,7 @@
 from models.train_eval import Classifier
 from models.model_architectures import DenseNet
-from models.callbacks import (early_stop_callback, checkpoint_callback, 
+from models.callbacks import (early_stop_callback, checkpoint_callback,
                               rich_progress_bar, rich_model_summary, lr_monitor)
-from processing.utils import read_yaml
 from pytorch_lightning import Trainer
 from pytorch_lightning.loggers import WandbLogger, CSVLogger
 from data_loading import get_hsi_loaders
@@ -10,7 +9,17 @@ import pickle
 import torch
 import os
 from models.hsi.band_selection.bam import BandAttentionIntegrated
+from models.hsi.band_selection.triple_attention import BandAttentionIntegrated as TripleAttention
 import glob
+from omegaconf import OmegaConf
+import os
+
+
+def read_yaml(file_path):
+    conf = OmegaConf.load(file_path)
+    config = OmegaConf.create(OmegaConf.to_yaml(conf, resolve=True))
+    return config
+
 
 config = read_yaml('models/hsi/config.yaml')
 
@@ -18,6 +27,8 @@ if config['model_name'].startswith('densenet'):
   model_obj = DenseNet(config=config)
 elif config['model_name'].startswith('sparse_bam_densenet'):
   model_obj = BandAttentionIntegrated(config)
+elif config['model_name'].startswith('triple_attention'):
+  model_obj = TripleAttention(config)
 
 if config['load_model'] :
   try :
@@ -46,7 +57,7 @@ file_name = model_obj.model_name+f"__{config['data_type']}"+f"__{config['preproc
 checkpoint_callback.dirpath = os.path.join(RESULT_DIR, 'ckpts')
 checkpoint_callback.filename = file_name +'--'+ config['ckpt_file_name']
 
-if  os.path.exists(os.path.join(RESULT_DIR, 'evaluations', file_name+"__predictions.pkl")):
+if not  os.path.exists(os.path.join(RESULT_DIR, 'evaluations', file_name+"__predictions.pkl")):
   run_name = f"lr_{config['lr']} *** bs{config['BATCH_SIZE']} *** decay_{config['weight_decay']}"
   wandb_logger = WandbLogger(project= NAME, name = run_name)
   csv_logger = CSVLogger(RESULT_DIR+'/logs/'+ file_name)
@@ -55,7 +66,7 @@ if  os.path.exists(os.path.join(RESULT_DIR, 'evaluations', file_name+"__predicti
   trainer = Trainer(callbacks=[early_stop_callback, checkpoint_callback, rich_progress_bar, rich_model_summary, lr_monitor],
                     accelerator = 'gpu' ,accumulate_grad_batches=config['accumulate_grad_batches'] , max_epochs=config['MAX_EPOCHS'], logger=[wandb_logger, csv_logger])
 
-  # trainer.fit(model, tr_loader, val_loader)
+  trainer.fit(model, tr_loader, val_loader)
   trainer.test(model, tst_loader)
 
   if not os.path.exists(os.path.join(RESULT_DIR, 'evaluations')):

@@ -1,5 +1,5 @@
 BATCH_SIZE: 64
-C: 168
+C: 150
 EarlyStopping:
   min_delta: 0.0001
   mode: min
@@ -26,8 +26,14 @@ cosine_warm_restarts_decay_lr_scheduler_params:
   T_mult: 2
   decay: 0.7
   eta_min: 1.0e-06
-data_dir: Data/hsi_masked_pcaLoading/Channel_168
-data_type: maskedPCALoading
+data_config:
+  BATCH_SIZE: ${BATCH_SIZE}
+  data_dir: ${data_dir}
+  num_classes: ${num_classes}
+  num_workers: ${num_workers}
+  preprocessing: ${preprocessing}
+data_dir: Data/hsi_triple_attn/channels_${C}
+data_type: TripleAttnDataset
 densenet_variant:
 - 24
 - 18
@@ -37,7 +43,7 @@ dir: results/hsi
 exponential_decay_lr_scheduler_params:
   gamma: 0.985
 k: 24
-load_model: true
+load_model: false
 lr: 3.5e-05
 modality: hsi
 model_name: densenet
