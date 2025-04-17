@@ -93,7 +93,7 @@ The performance of the dual-branch network was systematically compared by:
   ### **Data Setup**
    - Put the data files under the ```Data``` folder.
         - data split logic implemented [here](processing/data_creation.py)
-        - ROI selection for hyperspectral data is implemented [here](processing/hsi_processing.py)
+        - ROI selection for hyperspectral data is implemented [here](processing/hsi_preprocessing.py)
         - Hyperspectral seed related helper functions are implemented [here](processing/crop.py)
     
   ### **Modelling**
