@@ -85,10 +85,25 @@ The performance of the dual-branch network was systematically compared by:
 
 ---
 
-#### Setup Instructions : 
+## **Reproducibility Settings** : 
+  ### **Environment Setup**
    - Create a new poetry project : ```poetry install```
-   - Run [env_activation bash](activate.sh) file.
-   - It will install all necessary packages for the first run.
+   - Run [env_activation bash](activate.sh) file to install requirements and activate environment.
+
+  ### **Data Setup**
+   - Put the data files under the ```Data``` folder.
+        - data split logic implemented [here](processing/data_creation.py)
+        - ROI selection for hyperspectral data is implemented [here](processing/hsi_processing.py)
+        - Hyperspectral seed related helper functions are implemented [here](processing/crop.py)
+    
+  ### **Modelling**
+  - RGB image modelling with training of models like GoogleNet, Resnet-34, DenseNet-121 is implemented. [here](models/rgb)
+  - For hyperspectral image model training :
+      - Implementation of techniques used in the research like [PCA-Loading](models/hsi/band_selection/pca_loading.py), [SPA](models/hsi/band_selection/spa.py) , [Spectral-BAM](models/hsi/band_selection/bam.py) , [Triple Attention](triple_attn/bands.py).
+      - The base-model for classification after band selection, is DenseNet-121. The implementations for [architecture](models/model_architectures.py), [training_configurations](models/hsi/config.yaml) , [trainer](models/hsi/trainer.py)
+  - For ensemble modelling, fusion of (RGB+Hyperspectral) data :
+       - The predictions of base-models used in ensemble are first recorded on the entire train, val, test. Check code [here](models/ensemble/base.py)
+       - The base model predictions are then merged and passed through classifier like SVM for ensemble-based predictions. Code implemented [here](models/ensemble/regression_ensemble.py).
    
 ---
 
